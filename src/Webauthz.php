@@ -5,382 +5,266 @@ class Webauthz
 {
 
     /**
-     * Endpoint URL
-     */
-    private $endpointURL;
-
-
-    /**
-     * RealmId
-     */
-    private $realmId;
-
-
-    /**
-     * Authorization Token
-     */
-    private $authorizationToken;
-
-
-    /**
-     * Create a new RealmClient Instance
+     * Create a new Webauthz Instance
      */
     public function __construct()
     {
-//        $this->endpointURL = $endpointURL;
-//        $this->realmId = $realmId;
-//        $this->authorizationToken = $authorizationToken;
+        //
     }
 
-
+    /**
+     * Verify RealmInfo
+     *
+     */
     public function verifyRealmInfo()
     {
         try {
-            $url = 'https://loginshield.com/service/account/realm?uri=' . get_site_url();
-            $response = wp_remote_get($url);
-            $wwwAuthenticate = wp_remote_retrieve_header( $response, 'WWW-Authenticate' );
+            $this->fetchWebAuth();
 
-            // $wwwAuthenticate returned value
-            $wwwAuthenticate = 'Bearer realm=https%3A%2F%2Floginshield.com, scope=enterprise-realm, path=%2Fservice, webauthz_discovery_uri=https%3A%2F%2Floginshield.com%2Fservice%2Fwebauthz%2Fdiscovery.json';
+            $this->fetchWebAuthzConfig();
 
-            // Todo : Add a module to parse $wwwAuthenticate to get realm, scope, path, webauthz_discovery_uri
-            $realm = "https://loginshield.com";
-            $scope = "enterprise-realm";
-            $path = "/service";
-            $webauthz_discovery_uri = "https://loginshield.com/service/webauthz/discovery.json";
+            $this->registerClient();
 
-            // Store $realm, $scope, $path, $webauthz_discovery_uri into the database
-            add_option( 'loginshield_realm', $realm );
-            add_option( 'loginshield_scope', $scope );
-            add_option( 'loginshield_path', $path );
-            add_option( 'loginshield_webauthz_discovery_uri', $webauthz_discovery_uri );
+            $data = $this->requestAccess();
 
-            // Fetch Webauthz configuration
-            $response = wp_remote_get($webauthz_discovery_uri);
-            $webauthzConfig = wp_remote_retrieve_body($response);
+            return (object) array(
+                'status'=> 'success',
+                'payload'=> $data
+            );
+        } catch (\Exception $exception) {
+            return (object) array(
+                'error'     => 'fetch-failed',
+                'message'   => $exception->getMessage()
+            );
+        }
+    }
 
-            // $webauthzConfig returned value
-            $webauthzConfig = '{"webauthz_register_uri":"https://loginshield.com/service/webauthz/register","webauthz_request_uri":"https://loginshield.com/service/webauthz/request","webauthz_exchange_uri":"https://loginshield.com/service/webauthz/exchange"}';
+    /**
+     * Exchange Grant Token to Access Token
+     *
+     * @param $grantToken
+     * @return object
+     */
+    public function getAccessToken($grantToken)
+    {
+        try {
+            $client_token = get_option( 'loginshield_client_token' );
 
-            // Todo : Add a module to parse $webauthzConfig to get $webauthz_register_uri, $webauthz_request_uri, $webauthz_exchange_uri
-            $webauthz_register_uri = "https://loginshield.com/service/webauthz/register";
-            $webauthz_request_uri = "https://loginshield.com/service/webauthz/request";
-            $webauthz_exchange_uri = "https://loginshield.com/service/webauthz/exchange";
-
-            // Store $webauthz_register_uri, $webauthz_request_uri, $webauthz_exchange_uri into the database
-            add_option( 'loginshield_webauthz_register_uri', $webauthz_register_uri );
-            add_option( 'loginshield_webauthz_request_uri', $webauthz_request_uri );
-            add_option( 'loginshield_webauthz_exchange_uri', $webauthz_exchange_uri );
-
-            // Define register parameters
-            $client_name = "";
-            $client_version = "LoginShield for WordPress v1.0.0";
-            $grant_redirect_uri = admin_url( '/options-general.php?page=loginshield' );
-
-            // Register client
             $args = array(
                 'headers' => array(
+                    'Authorization' => 'Bearer ' . $client_token,
                     'Content-Type'  => 'application/json',
                 ),
                 'method'    => 'POST',
-                'body'      => '{"client_name":"test", "client_version": "test2", "grant_redirect_uri": "http://localhost"}',
+                'body'      => '{"grant_token": "' . $grantToken . '"}',
                 'sslverify' => false,
             );
 
-            $response = wp_remote_post( $webauthz_register_uri , $args );
-            $client = wp_remote_retrieve_body($response);
-            // Client result
-            $client = '{"client_id":"5WMfdUI33DdwevKTS2FUdWCN156navt6","client_token":"client:5WMfdUI33DdwevKTS2FUdWCN156navt6:MKWRAJT6WnBfL_GdM3-4L0_6_x1JWbdkeLM98Xk30rnxfl7SYL5-BZG6xB2tLB-C0H6MqluU_L6kHyHbQpvk6d4sa4Jv0Ic8e-K21q-VtBsLlPIYho8IN97YWale5Pgb"}';
+            $webauthz_exchange_uri = get_option( 'loginshield_webauthz_exchange_uri' );
+            $response = wp_remote_post( $webauthz_exchange_uri , $args );
+            $responseObj = wp_remote_retrieve_body($response);
 
-            // Todo : fetch client_id, client_token from returned value
-            $client_id = "5WMfdUI33DdwevKTS2FUdWCN156navt6";
-            $client_token = "client:5WMfdUI33DdwevKTS2FUdWCN156navt6:MKWRAJT6WnBfL_GdM3-4L0_6_x1JWbdkeLM98Xk30rnxfl7SYL5-BZG6xB2tLB-C0H6MqluU_L6kHyHbQpvk6d4sa4Jv0Ic8e-K21q-VtBsLlPIYho8IN97YWale5Pgb";
+            $responseObj = json_decode($responseObj);
 
-            // Step 4
+            $access_token = $responseObj->access_token;
+            $refresh_token = $responseObj->refresh_token;
+
+            update_option( 'loginshield_access_token', $access_token );
+            update_option( 'loginshield_refresh_token', $refresh_token );
+
+            return (object) array(
+                'status'    => 'success',
+                'payload'   => $access_token,
+            );
+        } catch (\Exception $exception) {
+            return (object) array(
+                'error'     => 'fetch-failed',
+                'message'   => $exception->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Fetch WebAuth Header
+     *
+     * @return false|string
+     */
+    private function fetchWebAuth()
+    {
+        $url = 'https://loginshield.com/service/account/realm?uri=' . get_site_url();
+        $response = wp_remote_get($url);
+        $wwwAuthenticate = wp_remote_retrieve_header( $response, 'WWW-Authenticate' );
+
+        $wwwAuthenticate = substr($wwwAuthenticate, 7);
+        $realmInfo = array();
+
+        $wwwAuthenticateInfo = explode(', ', $wwwAuthenticate);
+        foreach($wwwAuthenticateInfo as $info) {
+            $line = explode('=', $info);
+            $key = $line[0];
+            $value = urldecode($line[1]);
+            $realmInfo[$key] = $value;
+        }
+
+        $realm = $realmInfo['realm'];
+        $scope = $realmInfo['scope'];
+        $path = $realmInfo['path'];
+        $webauthz_discovery_uri = $realmInfo['webauthz_discovery_uri'];
+
+        update_option( 'loginshield_realm', $realm );
+        update_option( 'loginshield_scope', $scope );
+        update_option( 'loginshield_path', $path );
+        update_option( 'loginshield_webauthz_discovery_uri', $webauthz_discovery_uri );
+
+        return $wwwAuthenticate;
+    }
+
+    /**
+     * Fetch WebAuthz Config
+     *
+     * @return mixed
+     */
+    private function fetchWebAuthzConfig()
+    {
+        $webauthz_discovery_uri = get_option( 'loginshield_webauthz_discovery_uri' );
+
+        $response = wp_remote_get($webauthz_discovery_uri);
+        $webauthzConfig = wp_remote_retrieve_body($response);
+
+        $webauthzConfig = json_decode($webauthzConfig);
+
+        // Get specific uris
+        $webauthz_register_uri = $webauthzConfig->webauthz_register_uri;
+        $webauthz_request_uri = $webauthzConfig->webauthz_request_uri;
+        $webauthz_exchange_uri = $webauthzConfig->webauthz_exchange_uri;
+
+        // Store $webauthz_register_uri, $webauthz_request_uri, $webauthz_exchange_uri into the database
+        update_option( 'loginshield_webauthz_register_uri', $webauthz_register_uri );
+        update_option( 'loginshield_webauthz_request_uri', $webauthz_request_uri );
+        update_option( 'loginshield_webauthz_exchange_uri', $webauthz_exchange_uri );
+
+        return $webauthzConfig;
+    }
+
+    /**
+     * Register Client
+     *
+     * @return mixed
+     */
+    private function registerClient()
+    {
+        $client_name = "#admin";
+        $client_version = "LoginShield for WordPress v1.0.0";
+        $grant_redirect_uri = admin_url( '/options-general.php?page=loginshield' );
+
+        // Register client
+        $args = array(
+            'headers' => array(
+                'Content-Type'  => 'application/json',
+            ),
+            'method'    => 'POST',
+            'body'      => '{"client_name": "' . $client_name . '", "client_version": "' . $client_version . '", "grant_redirect_uri": "' . $grant_redirect_uri . '"}',
+            'sslverify' => false,
+        );
+
+        $webauthz_register_uri = get_option( 'loginshield_webauthz_register_uri' );
+
+        $response = wp_remote_post( $webauthz_register_uri , $args );
+        $client = wp_remote_retrieve_body($response);
+
+        $client = json_decode($client);
+
+        $client_id = $client->client_id;
+        $client_token = $client->client_token;
+
+        update_option( 'loginshield_client_id', $client_id );
+        update_option( 'loginshield_client_token', $client_token );
+
+        return $client;
+    }
+
+    /**
+     * Request Web Authorization
+     *
+     * @return mixed
+     */
+    private function requestAccess()
+    {
+        $realm = get_option( 'loginshield_realm' );
+        $scope = get_option( 'loginshield_scope' );
+        $client_state = $this->generateRandomString();
+        $client_token = get_option( 'loginshield_client_token' );
+        $webauthz_request_uri = get_option( 'loginshield_webauthz_request_uri' );
+
+        // Store client state
+        update_option( 'loginshield_client_state', $client_state );
+
+        $args = array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $client_token,
+                'Content-Type'  => 'application/json',
+            ),
+            'method'    => 'POST',
+            'body'      => '{"realm":"' . $realm . '", "scope":"' . $scope . '", "client_state": "' . $client_state . '"}',
+            'sslverify' => false,
+        );
+        $response = wp_remote_post( $webauthz_request_uri , $args );
+        $redirectObj = wp_remote_retrieve_body($response);
+        $redirectObj = json_decode($redirectObj);
+
+        return $redirectObj;
+    }
+
+    public function exchangeToken($type, $token)
+    {
+        try {
+            $webauthz_exchange_uri = get_option( 'loginshield_webauthz_exchange_uri' );
+            $client_token = get_option( 'loginshield_client_token' );
+
+            if ($type === 'grant') {
+                $body = '{"grant_token":"' . $token . '"}';
+            } else if ($type === 'refresh') {
+                $body = '{"refresh_token":"' . $token . '"}';
+            } else {
+                return null;
+            }
+
             $args = array(
                 'headers' => array(
+                    'Authorization' => 'Bearer ' . $client_token,
                     'Content-Type'  => 'application/json',
                 ),
                 'method'    => 'POST',
-                'body'      => '{"client_name":"test", "client_version": "test2", "grant_redirect_uri": "http://localhost"}',
+                'body'      => $body,
                 'sslverify' => false,
             );
-            $response = wp_remote_post( $webauthz_request_uri , $args );
+            $response = wp_remote_post( $webauthz_exchange_uri , $args );
+            $tokenObj = wp_remote_retrieve_body($response);
+            $tokenObj = json_decode($tokenObj);
 
             return (object) array(
-                'error' => 'unexpected-response',
-                'response'=> $response,
-                'grant_redirect_uri'=> $grant_redirect_uri,
-                'client'=> $client,
-                'www_authenticate'=> $wwwAuthenticate,
-                'webauthz_config'=> $webauthzConfig,
+                'status'    => 'success',
+                'payload'   => $tokenObj,
             );
         } catch (\Exception $exception) {
             return (object) array(
-                'error' => 'registration-failed',
-                'response'=> $exception
+                'error'     => 'fetch-failed',
+                'message'   => $exception->getMessage()
             );
         }
     }
 
-
     /**
-     * Register a new user with the 'immediate' method.
+     * Get random string (Code generation)
      *
-     * The immediate method is preferred for the best user experience.
-     * To use the immediate method, provide `realmScopedUserId`, `name`, and `email`,
-     * and if the service responds with { isCreated: true } then continue to the
-     * first login with LoginShield (specify the new key flag) to complete registration.
-     *
-     * @param string $realmScopedUserId     how LoginShield should identify the user for this authentication realm
-     * @param string $name                  the user's display name
-     * @param string $email                 the user's email address
-     * @param boolean $replace              optional, if true the service will replace any existing realmScopedUserId record instead of returning a conflict error
-     *
-     * @return mixed
      */
-    public function createRealmUser($realmScopedUserId, $name, $email, $replace)
-    {
-        try {
-            $url = $this->endpointURL . '/service/realm/user/create';
-
-            wp_remote_get('http://thirdparty.com?foo=bar');
-
-            $fields = array(
-                'businessId'    => $businessId,
-                'url'           => $contentUrl,
-                'tokenValue'    => $tokenValue
-            );
-            $args = array(
-                'headers' => array(
-                    'Content-Type'  => 'application/json',
-                    'User-Agent'    => 'WSKR WPP',
-                    'Authorization' => 'Bearer ' . $this->authorizationToken,
-                ),
-                'method'    => 'POST',
-                'sslverify' => false,
-            );
-
-            $responseArr = wp_remote_post( $url , $args );
-            $body = $responseArr['body'];
-            $response = $responseArr['response'];
-
-
-
-            $fields = array (
-                'realmId' => $this->realmId,
-                'realmScopedUserId' => $realmScopedUserId,
-                'name' => $name,
-                'email' => $email,
-                'replace' => $replace
-            );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Authorization: Token ' . $this->authorizationToken,
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
-
-            if ($response && $response->isCreated) {
-                return $response;
-            }
-
-            return (object) array(
-                'error' => 'unexpected-response',
-                'response'=> $response
-            );
-        } catch (\Exception $exception) {
-            return (object) array(
-                'error' => 'registration-failed',
-                'response'=> $exception
-            );
+    private function generateRandomString($length = 16) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
-    }
-
-
-    /**
-     * Register a new user with the 'redirect' method.
-     *
-     * The immediate method is preferred for the best user experience.
-     *
-     * To use the redirect method, provide `realmScopedUserId` and `redirect`,
-     * and if the service responds with { isCreated: true, forward: <url> } then
-     * redirect the user to that forward URL; and when the service has registered
-     * the user, the service will redirect the user back to the specified `redirect`
-     * URL.
-     *
-     * @param string $realmScopedUserId     how LoginShield should identify the user for this authentication realm
-     * @param string $redirect              where loginshield will redirect the user after the user authenticates and confirms the link with the realm (the enterprise should complete the registration with the first login with loginshield at this url)
-     *
-     * @return mixed
-     */
-    public function createRealmUserWithRedirect($realmScopedUserId, $redirect)
-    {
-        try {
-            $url = $this->endpointURL . '/service/realm/user/create';
-
-            $fields = array (
-                'realmId' => $this->realmId,
-                'realmScopedUserId' => $realmScopedUserId,
-                'redirect' => $redirect
-            );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token ' . $this->authorizationToken,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
-
-            if ($response && $response->isCreated && $response->forward && $this->startsWith($response->forward, $this->endpointURL)) {
-                return $response;
-            }
-
-            return json_encode(array(
-                'error' => 'unexpected-response',
-                'response'=> $response
-            ));
-        } catch (\Exception $exception) {
-            return json_encode(array(
-                'error' => 'registration-failed',
-                'response'=> $exception
-            ));
-        }
-    }
-
-
-    /**
-     * Start Login.
-     *
-     * @param string $realmScopedUserId     how LoginShield should identify the user for this authentication realm
-     * @param string $redirect              where loginshield will redirect the user after the user authenticates and confirms the link with the realm (the enterprise should complete the registration with the first login with loginshield at this url)
-     * @param boolean $isNewKey
-     *
-     * @return mixed
-     */
-    public function startLogin($realmScopedUserId, $redirect, $isNewKey = false)
-    {
-        try {
-            $url = $this->endpointURL . '/service/realm/login/start';
-
-            $fields = array (
-                'realmId' => $this->realmId,
-                'userId' => $realmScopedUserId,
-                'isNewKey' => $isNewKey,
-                'redirect' => $redirect
-            );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token ' . $this->authorizationToken,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
-
-            if ($response && $response->forward && $this->startsWith($response->forward, $this->endpointURL)) {
-                return $response;
-            }
-
-            return (object) array(
-                'error' => 'unexpected-response',
-                'response'=> $response
-            );
-        } catch (\Exception $exception) {
-            return (object) array(
-                'error' => 'login-failed',
-                'response'=> $exception
-            );
-        }
-    }
-
-
-    /**
-     * Verify Login.
-     *
-     * @param string $token
-     *
-     * @return mixed
-     */
-    public function verifyLogin($token)
-    {
-        try {
-            $url = $this->endpointURL . '/service/realm/login/verify';
-
-            $fields = array (
-                'token' => $token
-            );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token ' . $this->authorizationToken,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
-
-            if ($response) {
-                return $response;
-            }
-
-            return (object) array(
-                'error' => 'unexpected-response',
-                'response'=> $response
-            );
-        } catch (\Exception $exception) {
-            return (object) array(
-                'error' => 'unexpected-response',
-                'response'=> $exception
-            );
-        }
-    }
-
-
-    /**
-     * An utility to check if a string starts with a sub string or not
-     *
-     * @param string $haystack     Resource String
-     * @param string $needle       Target Sub String
-     *
-     * @return mixed
-     */
-    private function startsWith( $haystack, $needle ) {
-        $length = strlen( $needle );
-        return substr( $haystack, 0, $length ) === $needle;
+        return $randomString;
     }
 }

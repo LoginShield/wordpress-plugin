@@ -29,13 +29,21 @@ if(function_exists('loginshield_option_fields')){
         }
     }
 }
+
+$client_id = $_GET['client_id'];
+$client_state = $_GET['client_state'];
+$grant_token = $_GET['grant_token'];
+
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 <section class="login-shield">
     <div class="LOGINSHIELDFormInside clear p40">
         <h2>LoginShield Settings</h2>
-        <form id="LoginShieldSettingsForm" method="post" action="action.php">
+        <form id="LoginShieldSettingsForm" method="post" action="action.php"
+              data-client-id="<?php echo $client_id; ?>"
+              data-client-state="<?php echo $client_state; ?>"
+              data-grant-token="<?php echo $grant_token; ?>">
             <?php
             settings_fields('loginshield-settings');
             do_settings_sections('loginshield-settings');

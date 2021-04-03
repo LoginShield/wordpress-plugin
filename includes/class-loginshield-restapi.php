@@ -129,9 +129,14 @@ class LoginShield_RestAPI
             'callback' => array($this, 'checkUserWithLogin')
         ));
 
-        register_rest_route( $this->plugin_name, '/verifyRealmInfo', array(
+        register_rest_route( $this->plugin_name, '/token/verify', array(
             'methods'  => 'POST',
-            'callback' => array($this, 'verifyRealmInfo')
+            'callback' => array($this, 'verifyToken')
+        ));
+
+        register_rest_route( $this->plugin_name, '/token/exchange', array(
+            'methods'  => 'POST',
+            'callback' => array($this, 'exchangeToken')
         ));
     }
 
@@ -173,38 +178,74 @@ class LoginShield_RestAPI
     }
 
     /**
-     * Verify Realm Information
+     * Initialize Admin Setting
      *
      * @param WP_REST_Request $request
      *
      * @return WP_REST_Response
      */
-    public function verifyRealmInfo(WP_REST_Request $request) {
+    public function verifyToken(WP_REST_Request $request) {
+        try {
+            $client_id = isset($_REQUEST['client_id']) ? $_REQUEST['client_id'] : '';
+            $client_token = isset($_REQUEST['redirect_to']) ? $_REQUEST['client_token'] : '';
+            $grant_token = isset($_REQUEST['grant_token']) ? $_REQUEST['grant_token'] : '';
+
+            if ($client_id !== '' && $client_token !== '' && $grant_token !== '') {
+                $accessToken = $this->getAccessToken($grant_token);
+                if ($accessToken) {
+                    return new WP_REST_Response([
+                        'status'     => 'success',
+                    ], 200);
+                } else {
+                    return new WP_REST_Response([
+                        'error'      => 'invalid-credentials',
+                        'message'    => 'Invalid Credentials',
+                    ], 200);
+                }
+            } else {
+                $response = $this->verifyRealmInfo();
+                if ($response->error) {
+                    return new WP_REST_Response([
+                        'error'      => $response->error,
+                        'response'   => $response->payload,
+                    ], 200);
+                }
+                return new WP_REST_Response([
+                    'status'    => 'success',
+                    'payload'   => $response->payload,
+                ], 200);
+            }
+        } catch (\Exception $exception) {
+            return new WP_REST_Response([
+                'error'     => 'initialization-failed',
+                'message'   => $exception->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get Access Token
+     *
+     * @param $grantToken
+     * @return WP_REST_Response
+     */
+    private function getAccessToken($grantToken)
+    {
         try {
             $webauthz = new Webauthz();
 
-            $response = $webauthz->verifyRealmInfo();
-//            $response = 'test';
+            $response = $webauthz->getAccessToken();
 
-//            $login = $request->get_param('login');
-//
-//            $userByLogin = get_userdatabylogin($login);
-//            $userByEmail = get_user_by('email', $login);
-//
-//            if ($userByLogin) $user = $userByLogin;
-//            if ($userByEmail) $user = $userByEmail;
-//
-//            if (!$user) {
-//                return new WP_REST_Response([
-//                    'isLoginShieldEnabled'  => false,
-//                ], 200);
-//            }
-//
-//            $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-//            $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_enabled', true);
+            if ($response->error) {
+                return new WP_REST_Response([
+                    'error'     => $response->error,
+                    'message'   => $response->message,
+                ], 200);
+            }
 
             return new WP_REST_Response([
-                'response'      => $response,
+                'status'    => 'success',
+                'payload'   => $response->payload,
             ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([
@@ -213,6 +254,127 @@ class LoginShield_RestAPI
             ], 500);
         }
     }
+
+
+    /**
+     * Verify Realm Info
+     *
+     * @return object
+     */
+    private function verifyRealmInfo()
+    {
+        try {
+            $webauthz = new Webauthz();
+
+            $response = $webauthz->verifyRealmInfo();
+
+            if ($response->error) {
+                return (object) array(
+                    'error'      => $response->error,
+                    'message'    => $response->message,
+                );
+            }
+
+            return (object) array(
+                'status'    => 'success',
+                'payload'   => $response->payload,
+            );
+        } catch (\Exception $exception) {
+            return (object) array(
+                'error'     => 'fetch-failed',
+                'message'   => $exception->getMessage(),
+            );
+        }
+    }
+
+
+    /**
+     * Exchange Token
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response
+     */
+    public function exchangeToken(WP_REST_Request $request) {
+        try {
+            $clientId = $request->get_param('client_id');
+            $clientState = $request->get_param('client_state');
+            $grantToken = $request->get_param('grant_token');
+
+            $refresh = $request->get_param('refresh');
+            $refreshToken = $request->get_param('refresh_token');
+
+            $storedClientId = get_option( 'loginshield_client_id' );
+            if ($clientId != $storedClientId) {
+                return new WP_REST_Response([
+                    'error'    => 'not-found',
+                    'message'  => 'Exchange: client id does not match stored client id',
+                ], 400);
+            }
+
+            $storedClientState = get_option( 'loginshield_client_state' );
+            if ($clientState != $storedClientState) {
+                return new WP_REST_Response([
+                    'error'    => 'not-found',
+                    'message'  => 'Exchange: client state does not match stored client state',
+                ], 400);
+            }
+
+            $webauthz = new Webauthz();
+            if ($grantToken) {
+                $response = $webauthz->exchangeToken('grant', $grantToken);
+            } else if ($refresh && $refreshToken) {
+                $response = $webauthz->exchangeToken('refresh', $refreshToken);
+            } else {
+                return new WP_REST_Response([
+                    'error'    => 'invalid-request',
+                    'message'  => 'Exchange: input grant_token or stored refresh_token is required',
+                ], 400);
+            }
+
+            if ($response->error) {
+                return new WP_REST_Response([
+                    'error'      => $response->error,
+                    'message'    => $response->message,
+                ], 400);
+            }
+
+            $payload = $response->payload;
+            if ($payload->fault) {
+                return new WP_REST_Response([
+                    'error'      => 'access-denied',
+                    'message'    => $payload->fault->type,
+                ], 400);
+            }
+
+            $accessToken = $payload->access_token;
+            $accessTokenMaxSeconds = $payload->access_token_max_seconds;
+            $refreshToken = $payload->refresh_token;
+            $refreshTokenMaxSeconds = $payload->refresh_token_max_seconds;
+
+            if (!isset($accessToken) || sizeof($accessToken) === 0) {
+                return new WP_REST_Response([
+                    'error'      => 'access-denied',
+                    'message'    => 'Exchange: no access token in response',
+                ], 400);
+            }
+
+            update_option('loginshield_access_token', $accessToken);
+            update_option('loginshield_access_token_max_seconds', $accessTokenMaxSeconds);
+            update_option('loginshield_refresh_token', $refreshToken);
+            update_option('loginshield_refresh_token_max_seconds', $refreshTokenMaxSeconds);
+
+            return new WP_REST_Response([
+                'status'        => 'granted',
+                'access_token'  => $accessToken,
+            ], 200);
+        } catch (\Exception $exception) {
+            return new WP_REST_Response([
+                'error'     => 'login-failed',
+                'message'   => $exception->getMessage(),
+            ], 500);
+        }
+    }
+
 
     /**
      * Login with Password
