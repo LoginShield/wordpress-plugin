@@ -30,7 +30,29 @@ class LoginShield_Activator {
 	 * @since    1.0.0
 	 */
 	public static function activate() {
-		
+        /**
+         * Create LoginShield Login Page.
+         *
+         * @since    1.0.3
+         */
+        $check_login_page_exist = get_page_by_title('LoginShield Login', 'OBJECT', 'page');
+        if(empty($check_login_page_exist)) {
+            $page_id = wp_insert_post(
+                array(
+                    'comment_status' => 'close',
+                    'ping_status'    => 'close',
+                    'post_author'    => 1,
+                    'post_title'     => ucwords('LoginShield'),
+                    'post_name'      => sanitize_title('LoginShield'),
+                    'post_status'    => 'publish',
+                    'post_content'   => '[loginshield_login_page]',
+                    'post_type'      => 'page',
+                    'post_parent'    => '',
+                    'page_template'  => 'loginshield-empty.php'
+                )
+            );
+            update_option( 'loginshield_login_page', $page_id );
+            update_post_meta( $page_id, '_wp_page_template', 'templates/loginshield-empty.php' );
+        }
 	}
-
 }

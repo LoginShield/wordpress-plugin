@@ -16,7 +16,7 @@
  * Plugin Name:       LoginShield
  * Plugin URI:        https://loginshield.com/
  * Description:       This plugin is created to implement LoginShield functionality in WordPress.
- * Version:           1.0.0
+ * Version:           1.0.3
  * Author:            Luka Modric
  * Author URI:        https://loginshield.com/
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'LOGINSHIELD_VERSION', '1.0.0' );
+define( 'LOGINSHIELD_VERSION', '1.0.3' );
 
 /**
  * The code that runs during plugin activation.
@@ -91,21 +91,13 @@ function loginshield_enterprise_settings() {
     $realm_id = trim($form_data['$loginshield_realm_id']);
     $authorization_token = trim($form_data['$loginshield_authorization_token']);
 
-    $data = array(
-        'realm_id' => $realm_id,
-        'authorization_token' => $authorization_token
-    );
-
-    global $wpdb;
-    $res = $wpdb->insert('wp_login_shield', $data);
-
-    if ($res) {
+    try {
+        update_option('loginshield_realm_id', $realm_id);
+        update_option('loginshield_authorization_token', $authorization_token);
         echo json_encode(array('status' => 1,'data'=>'success'));
-    } else {
+    } catch (\Exception $exception) {
         echo json_encode(array('status' => 0,'data'=>'error'));
     }
-
-
 
     die;
 }

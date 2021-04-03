@@ -51,6 +51,8 @@ class LoginShield_Public {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
+
+        add_action( 'login_form_login', array( $this, 'redirect_to_custom_login' ) );
 	}
 
 	/**
@@ -72,6 +74,7 @@ class LoginShield_Public {
 		 * class.
 		 */
 
+        wp_enqueue_style( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'css/snackbar.css', array(), $this->version, 'all' );
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/loginshield-public.css', array(), $this->version, 'all' );
 
 	}
@@ -95,7 +98,41 @@ class LoginShield_Public {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/loginshield-public.js', array( 'jquery' ), $this->version, false );
+        wp_enqueue_script( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'js/snackbar.js', array( 'jquery' ), $this->version, false );
+        wp_enqueue_script( $this->plugin_name . 'realmClientBrowser', plugin_dir_url( __FILE__ ) . 'js/realm-client-browser.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'loginShieldPublic', plugin_dir_url( __FILE__ ) . 'js/loginshield-public.js', array( 'jquery' ), $this->version, false );
 
+        wp_localize_script( $this->plugin_name . 'loginShieldPublic', 'loginShieldPublicAjax', array(
+            'ajax_url'  => admin_url( 'admin-ajax.php' ),
+            'site_url'  => get_site_url(),
+            'api_base'  => esc_url_raw(rest_url()),
+            'nonce'     => wp_create_nonce( 'wp_rest' )
+        ));
 	}
+
+    /**
+     * Redirect the user to the custom login page instead of wp-login.php.
+     *
+     * @since 1.0.3
+     */
+    public function redirect_to_custom_login() {
+        if ( $_SERVER['REQUEST_METHOD'] == 'GET' ) {
+            $redirect_to = isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : null;
+
+            if ( is_user_logged_in() ) {
+                $this->redirect_logged_in_user( $redirect_to );
+                exit;
+            }
+
+            // The rest are redirected to the login page
+            $login_page_id = get_option( 'loginshield_login_page' );
+            $login_url = get_permalink( $login_page_id );
+            if ( ! empty( $redirect_to ) ) {
+                $login_url = add_query_arg( 'redirect_to', $redirect_to, $login_url );
+            }
+
+            wp_redirect( $login_url );
+            exit;
+        }
+    }
 }

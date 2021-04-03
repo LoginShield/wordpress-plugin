@@ -78,7 +78,7 @@ class LoginShield {
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-
+		$this->define_rest_apis();
 	}
 
 	/**
@@ -121,6 +121,17 @@ class LoginShield {
 		 * side of the site.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-loginshield-public.php';
+
+        /**
+         * The class responsible for 3rd party API integration
+         */
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/RealmClient.php';
+
+        /**
+         * The class responsible for defining all Rest APIs
+         */
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-restapi.php';
+
 
 		$this->loader = new LoginShield_Loader();
 
@@ -165,7 +176,6 @@ class LoginShield {
         /**
         * Create a new Table
         */
-        $this->loader->add_action( 'admin_menu', $plugin_admin, 'create_new_table' );
         $this->loader->add_action( 'show_user_profile', $plugin_admin, 'crf_show_extra_profile_fields' );
 	}
 
@@ -183,6 +193,13 @@ class LoginShield {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 	}
+
+	private function define_rest_apis() {
+
+	    $plugin_rest_api = new LoginShield_RestAPI( $this->get_plugin_name(), $this->get_version() );
+
+	    $this->loader->add_action( 'rest_api_init', $plugin_rest_api, 'register_rest_api');
+    }
 
 	/**
 	 * Run the loader to execute all of the hooks with WordPress.
@@ -224,4 +241,67 @@ class LoginShield {
 		return $this->version;
 	}
 
+	public function render_login_form($attributes, $content = null) {
+        $default_attributes = array('shot_title' => false);
+        $attributes = shortcode_atts($default_attributes, $attributes);
+        $shot_title = $attributes['show_title'];
+
+        if (is_user_logged_in()) {
+            return __('You are already sign in.', 'personalize-login');
+        }
+
+        $attributes['redirect'] = '';
+        if (isset($_REQUEST['redirect_to'])) {
+            $attributes['redirect'] = wp_validate_redirect($_REQUEST['redirect_to'], $attributes['redirect']);
+        }
+
+        return $this->get_template_html('loginshield_login_form', $attributes);
+    }
+
+    private function get_template_html( $template_name, $attributes = null ) {
+	    if (!$attributes) {
+	        $attributes = array();
+        }
+
+	    ob_start();
+	    do_action('personalize_login_before_'.$template_name);
+	    require('wp-content/plugins/loginshield/admin/partials/'.$template_name.'.php');
+	    do_action('personalize_login_after_'.$template_name);
+	    $html = ob_get_contents();
+	    ob_end_clean();
+
+	    return $html;
+    }
+
+    public function redirect_to_custom_login() {
+        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            $redirect_to = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
+
+            if (is_user_logged_in()) {
+                $this->redirect_logged_in_user($redirect_to);
+                exit;
+            }
+
+            $login_url = home_url('custom-login');
+            if (!empty($redirect_to)) {
+                $login_url = add_query_arg('redirect_to', $redirect_to, $login_url);
+            }
+
+            wp_redirect($login_url);
+            exit;
+        }
+    }
+
+    private function redirect_logged_in_user( $redirect_to = null ) {
+	    $user = wp_get_current_user();
+	    if (user_can($user, 'manage_options')) {
+	        if ($redirect_to) {
+	            wp_safe_redirect($redirect_to);
+            } else {
+	            wp_redirect(admin_url());
+            }
+        } else {
+
+        }
+    }
 }

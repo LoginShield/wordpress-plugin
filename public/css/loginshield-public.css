@@ -2,3 +2,243 @@
  * All of the CSS for your public-facing functionality should be
  * included in this file.
  */
+
+@-webkit-keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+html {
+    margin: 0 !important;
+}
+
+body {
+    margin: 0;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.m-0 {
+    margin: 0 !important;
+}
+
+.custom-login-form-conatiner .error-msg {
+    margin: 10px 0 0;
+    display: none;
+    color: red;
+}
+
+.custom-login-form-conatiner .button {
+    margin-top: 20px;
+}
+
+.hide {
+    display: none;
+}
+
+.loginshield_form_field {
+    transition: 0.4s;
+}
+
+.has-error input {
+    border-color: red !important;
+}
+
+button.loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+button.loading:after {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 18px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -8px;
+    margin-top: -10px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    border-top-color: transparent;
+    -webkit-animation: spin 1s infinite linear;
+    animation: spin 1s infinite linear;
+}
+
+#LoginShieldLogin {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    background: #f1f1f1;
+}
+
+#LoginShieldLoginForm {
+    width: 320px;
+    margin: 0 auto;
+    padding: 26px 24px 46px;
+    font-weight: 400;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+#LoginShieldLoginForm .forgetmenot {
+    display: flex;
+    align-items: center;
+}
+
+#LoginShieldLoginForm label {
+    font-size: 14px;
+    line-height: 1.5;
+    display: inline-block;
+    margin-bottom: 3px;
+    font-weight: normal;
+}
+
+#LoginShieldLoginForm .form-group-action {
+    display: flex;
+    justify-content: space-between;
+}
+
+#LoginShieldLoginForm label.remember-me {
+    padding-left: 6px;
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+
+#LoginShieldLoginForm form .input,
+#LoginShieldLoginForm input[type=password],
+#LoginShieldLoginForm input[type=text] {
+    font-size: 24px;
+    line-height: 1.33333333;
+    width: 100%;
+    padding: .1875rem .3125rem;
+    margin: 0 6px 16px 0;
+    min-height: 40px;
+    max-height: none;
+    box-shadow: 0 0 0 transparent;
+    border-radius: 4px;
+    border: .0625rem solid #7e8993;
+}
+
+#LoginShieldLoginForm form .input:focus,
+#LoginShieldLoginForm input[type=password]:focus,
+#LoginShieldLoginForm input[type=text]:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+    outline: 2px solid transparent;
+}
+
+#LoginShieldLoginForm .button {
+    background: #007cba;
+    border-color: #007cba;
+    color: #fff;
+    text-decoration: none;
+    text-shadow: none;
+    float: right;
+    display: inline-block;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 2.15384615;
+    min-height: 30px;
+    margin: 0;
+    padding: 0 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    -webkit-appearance: none;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+#LoginShieldLoginForm input[type=checkbox] {
+    border: 1px solid #7e8993;
+    border-radius: 4px;
+    background: #fbfbfb;
+    color: #555;
+    clear: none;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 0;
+    margin: -.25rem .25rem 0 0;
+    outline: 0;
+    padding: 0!important;
+    text-align: center;
+    vertical-align: middle;
+    width: 16px;
+    height: 16px;
+    -webkit-appearance: none;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+    transition: .05s border-color ease-in-out;
+}
+
+#LoginShieldLoginForm input[type=checkbox]:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+    outline: 2px solid transparent;
+}
+
+#LoginShieldLoginForm input[type=checkbox]:checked::before {
+    float: left;
+    display: inline-block;
+    vertical-align: middle;
+    speak: never;
+    -webkit-font-smoothing: antialiased;
+    content: url(data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20d%3D%27M14.83%204.89l1.34.94-5.81%208.38H9.02L5.78%209.67l1.34-1.25%202.57%202.4z%27%20fill%3D%27%231e8cbe%27%2F%3E%3C%2Fsvg%3E);
+    margin: -.1875rem 0 0 -.25rem;
+    height: 1.3125rem;
+    width: 1.3125rem;
+}
+
+#LoginShieldLoginForm input[type=checkbox]:checked::after {
+    display: none;
+}
+
+#LoginShieldLoginForm .form-group .error-msg {
+    font-size: 13px;
+    color: red;
+}
+
+#LoginShieldLoginForm .form-group.has-error input[type=text],
+#LoginShieldLoginForm .form-group.has-error input[type=password] {
+    margin-bottom: 0;
+}
+
+#LoginShieldLoginForm .form-group.has-error .error-msg {
+    margin-bottom: 16px;
+}
+
+#LoginShieldLoginForm.onLoginShield {
+    width: inherit;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}

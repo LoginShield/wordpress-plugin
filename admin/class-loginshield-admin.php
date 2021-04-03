@@ -40,6 +40,14 @@ class LoginShield_Admin {
 	 */
 	private $version;
 
+    /**
+     * The array of templates that this plugin tracks.
+     *
+     * @since    1.0.3
+     * @var string
+     */
+    protected $templates;
+
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -47,15 +55,27 @@ class LoginShield_Admin {
 	 * @param      string    $plugin_name       The name of this plugin.
 	 * @param      string    $version    The version of this plugin.
 	 */
-
-        public function __construct( $plugin_name, $version ) {
+    public function __construct( $plugin_name, $version ) {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-        
+        $this->templates = array();
+
+        // Initialize settings
         add_action( 'admin_init', array( $this,'loginshield_include_files' ) );
 		add_action( 'admin_init', array( $this,'loginshield_settings_register' ) );
 
+        // Add custom template
+        add_filter( 'theme_page_templates', array( $this, 'add_new_template' ) );
+        add_filter(	'wp_insert_post_data', array( $this, 'register_project_templates' ) );
+        add_filter( 'template_include', array( $this, 'view_project_template') );
+
+        // Add shortcodes for Login page
+        add_shortcode('loginshield_login_page', array( $this, 'loginshield_login_page'));
+
+        $this->templates = array(
+            'templates/loginshield-empty.php' => esc_html__('LoginShield Template', 'loginshield')
+        );
 	}
 
 	/**
@@ -77,6 +97,7 @@ class LoginShield_Admin {
 		 * class.
 		 */
 
+		wp_enqueue_style( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'css/snackbar.css', array(), $this->version, 'all' );
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/loginshield-admin.css', array(), $this->version, 'all' );
 
 	}
@@ -100,8 +121,16 @@ class LoginShield_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/loginshield-admin.js', array( 'jquery' ), $this->version, false );
-        wp_localize_script($this->plugin_name, 'loginshieldSettingAjax', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => get_site_url() ) );
+		wp_enqueue_script( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'js/snackbar.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'realmClientBrowser', plugin_dir_url( __FILE__ ) . 'js/realm-client-browser.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'loginShieldAdmin', plugin_dir_url( __FILE__ ) . 'js/loginshield-admin.js', array( 'jquery' ), $this->version, false );
+
+        wp_localize_script( $this->plugin_name . 'loginShieldAdmin', 'loginshieldSettingAjax', array(
+            'ajax_url'  => admin_url( 'admin-ajax.php' ),
+            'site_url'  => get_site_url(),
+            'api_base'  => esc_url_raw(rest_url()),
+            'nonce'     => wp_create_nonce( 'wp_rest' )
+        ));
 	}
     /**
      * Inculdes files in plugin .
@@ -120,7 +149,7 @@ class LoginShield_Admin {
         // add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
         add_submenu_page(
             'options-general.php',
-            'LoginShield Setting',
+            'LoginShield Settings',
             'LoginShield',
             'manage_options',
             'loginshield',
@@ -136,43 +165,41 @@ class LoginShield_Admin {
 
     }
 
-    public function create_new_table() {
-        global $wpdb;
-
-        $charset_collate = $wpdb->get_charset_collate();
-        $table_name = $wpdb->prefix . "login_shield";
-
-        $login_shield_table = "CREATE TABLE $table_name (
-            id bigint(20) unsigned NOT NULL auto_increment,
-            realm_id varchar(255) NOT NULL,
-            authorization_token varchar(255) NOT NULL,
-            PRIMARY KEY  (id)
-        ) $charset_collate;";
-
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($login_shield_table);
-    }
-
+    /**
+     * LoginShield Settings Page
+     *
+     * @since 1.0.0
+     */
     public function crf_show_extra_profile_fields($user) {
-        $status = get_the_author_meta('login_shield_status', $user->ID);
+        $current_user = wp_get_current_user();
+        $user_id = $current_user->ID;
+        $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
+        $isEnabled = get_user_meta($user_id, 'loginshield_is_enabled', true);
+        $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
+
+        $mode = $variable = $_GET['mode'];
+        $loginshield = $variable = $_GET['loginshield'];
+
         ?>
-        <h2>Login Shield Management</h2>
-		<table class="form-table">
+        <h2>LoginShield Management</h2>
+		<table id="LoginShieldForm" class="form-table" <?php if ((!$isRegistered || !$isConfirmed) && isset($mode) && isset($loginshield)): ?>data-mode="<?php echo $mode; ?>" data-loginshield="<?php echo $loginshield; ?>"<?php endif; ?>>
             <tbody>
-                <tr>
+                <tr id="RegisterForm" <?php if ($isRegistered && $isConfirmed): ?>style="display: none;"<?php endif; ?>>
                     <th>
-                        <label><?php esc_html_e('Activate/Deactivate Login Shield', 'crf');?></label>
+                        <label><?php esc_html_e('Register LoginShield', 'crf');?></label>
                     </th>
                     <td>
-                        <?php
-                            if ($status == 1) {
-                                ?>
-                                <button type="button" class="button button-secondary"><?php esc_html_e('Deactivate LoginShield', 'crf');?></button> <?php
-                            } else {
-                                ?>
-                                <button type="button" class="button button-primary"><?php esc_html_e('Activate LoginShield', 'crf');?></button> <?php
-                            }
-                        ?>
+                        <button type="button" id="ActivateLoginShield" class="button button-primary"><?php esc_html_e('Register LoginShield', 'crf');?></button>
+                        <div id="loginshield-content"></div>
+                    </td>
+                </tr>
+                <tr id="ActivateForm" <?php if (!$isRegistered || !$isConfirmed): ?>style="display: none;"<?php endif; ?>>
+                    <th>
+                        <label><?php esc_html_e('Security', 'crf');?></label>
+                    </th>
+                    <td>
+                        <input type="checkbox" id="security" name="security" <?php if ($isEnabled): ?>checked<?php endif; ?>>
+                        <label for="security"><?php esc_html_e('Protect this account with LoginShield', 'crf');?></label>
                     </td>
                 </tr>
                 <tr>
@@ -197,7 +224,7 @@ class LoginShield_Admin {
     }
 
     /**
-     * Register loginshield setting options.
+     * Register loginshield settings options.
      *
      * @since    1.0.0
      */
@@ -214,5 +241,93 @@ class LoginShield_Admin {
                 register_setting( 'loginshield-settings', $val );
             endforeach;
         endif;
+    }
+
+    /**
+     * Add LoginShield template to the page dropdown (v4.7+)
+     *
+     */
+    public function add_new_template( $posts_templates ) {
+
+        $posts_templates = array_merge( $posts_templates, $this->templates );
+        return $posts_templates;
+    }
+
+    /**
+     * Add LoginShield template to the pages cache in order to trick WordPress
+     * into thinking the template file exists where it doens't really exist.
+     */
+    public function register_project_templates( $atts ) {
+
+        // Create the key used for the themes cache.
+        $cache_key = 'page_templates-' . md5( get_theme_root() . '/' . get_stylesheet() );
+
+        // Retrieve the cache list.
+        // If it doesn't exist, or it's empty prepare an array.
+        $templates = wp_get_theme()->get_page_templates();
+        if ( empty( $templates ) ) {
+            $templates = array();
+        }
+
+        // New cache, therefore remove the old one
+        wp_cache_delete( $cache_key , 'themes');
+
+        // Now add our template to the list of templates by merging our templates
+        // with the existing templates array from the cache.
+        $templates = array_merge( $templates, $this->templates );
+
+        // Add the modified cache to allow WordPress to pick it up for listing
+        // available templates
+        wp_cache_add( $cache_key, $templates, 'themes', 1800 );
+
+        return $atts;
+
+    }
+
+    /**
+     * Checks if the template is assigned to the page.
+     */
+    public function view_project_template( $template ) {
+
+        // Get global post
+        global $post;
+
+        // Return template if post is empty
+        if ( ! $post ) {
+            return $template;
+        }
+
+        // Return default template if we don't have a custom one defined
+        if ( ! isset( $this->templates[ get_post_meta( $post->ID, '_wp_page_template', true ) ] ) ) {
+            return $template;
+        }
+
+        $file = plugin_dir_path( __FILE__ ). get_post_meta( $post->ID, '_wp_page_template', true );
+
+        // Just to be safe, we check if the file exist first
+        if ( file_exists( $file ) ) {
+            return $file;
+        } else {
+            echo $file;
+        }
+
+        // Return template
+        return $template;
+
+    }
+
+
+    /**
+     * LoginShield Login Page Template
+     *
+     * @since 1.0.3
+     */
+    public function loginshield_login_page() {
+        /**
+         * The file contain plugin login page html
+         *
+         */
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/loginshield-login.php';
+
     }
 }
