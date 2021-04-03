@@ -72,6 +72,8 @@ class Webauthz
             update_option( 'loginshield_access_token', $access_token );
             update_option( 'loginshield_refresh_token', $refresh_token );
 
+            update_option( 'loginshield_authorization_token', $access_token );
+
             return (object) array(
                 'status'    => 'success',
                 'payload'   => $access_token,
@@ -153,7 +155,7 @@ class Webauthz
      */
     private function registerClient()
     {
-        $client_name = "#admin";
+        $client_name = get_bloginfo('name');
         $client_version = "LoginShield for WordPress v1.0.0";
         $grant_redirect_uri = admin_url( '/options-general.php?page=loginshield' );
 
@@ -245,6 +247,44 @@ class Webauthz
             return (object) array(
                 'status'    => 'success',
                 'payload'   => $tokenObj,
+            );
+        } catch (\Exception $exception) {
+            return (object) array(
+                'error'     => 'fetch-failed',
+                'message'   => $exception->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Fetch Realm Id
+     *
+     * @param $accessToken
+     * @return object
+     */
+    public function fetchRealmId($accessToken) {
+        try {
+            $uri = "https://loginshield.com/service/realm?uri=" . get_site_url();
+            $args = array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Content-Type'  => 'application/json',
+                ),
+                'method'    => 'GET',
+                'sslverify' => false,
+            );
+            $response = wp_remote_get( $uri , $args );
+
+            $realmObj = wp_remote_retrieve_body($response);
+            $realmObj = json_decode($realmObj);
+
+            if ($realmObj->id) {
+                update_option( 'loginshield_realm_id', $realmObj->id );
+            }
+
+            return (object) array(
+                'status'    => 'success',
+                'payload'   => $realmObj,
             );
         } catch (\Exception $exception) {
             return (object) array(

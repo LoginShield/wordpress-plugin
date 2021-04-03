@@ -88,41 +88,47 @@ loginShield.AdminForm = (function($) {
     },
 
     handleActivateLoginShield: async function(e) {
-      const self = this;
-      const action = 'register-loginshield-user';
-      const mode = 'activate-loginshield';
+      try {
+        const self = this;
+        const action = 'register-loginshield-user';
+        const mode = 'activate-loginshield';
 
-      this.$btnActivateLoginShield.addClass('loading');
+        this.$btnActivateLoginShield.addClass('loading');
 
-      const response = await this.registerLoginShieldUser({ action });
-      if (!response || response.error) {
+        const response = await this.registerLoginShieldUser({ action });
+        if (!response || response.error) {
+          this.$btnActivateLoginShield.removeClass('loading');
+          return;
+        }
+
+        const { forward } = await this.loginWithLoginShield({ mode });
+
+        if (!forward)
+          return;
+
+        this.$btnActivateLoginShield.hide();
+
+        loginshieldInit({
+          elementId: 'loginshield-content',
+          backgroundColor: '#f1f1f1',
+          width: 500,
+          height: 460,
+          action: 'start',
+          mode: 'link-device',
+          forward: forward,
+          rememberMe: true,
+          onResult: function (result) {
+            if (!result)
+              return;
+
+            self.onResult(result);
+          },
+        });
+      } catch (e) {
+        this.showMessage('Service is unavailable', 'error');
         this.$btnActivateLoginShield.removeClass('loading');
-        return;
+        console.error(e);
       }
-
-      const { forward } = await this.loginWithLoginShield({ mode });
-
-      if (!forward)
-        return;
-
-      this.$btnActivateLoginShield.hide();
-
-      loginshieldInit({
-        elementId: 'loginshield-content',
-        backgroundColor: '#f1f1f1',
-        width: 500,
-        height: 460,
-        action: 'start',
-        mode: 'link-device',
-        forward: forward,
-        rememberMe: true,
-        onResult: function (result) {
-          if (!result)
-            return;
-
-          self.onResult(result);
-        },
-      });
     },
 
     registerLoginShieldUser: function (accountInfo) {
@@ -333,6 +339,8 @@ loginShield.SettingsForm = (function($) {
 
   let selectors = {
     form: '#LoginShieldSettingsForm',
+    actionForm: '#ActionForm',
+    btnAccessRequest: '#btnAccessRequest',
   };
 
   function SettingsForm() {
@@ -340,10 +348,14 @@ loginShield.SettingsForm = (function($) {
       return;
 
     this.$form = $(selectors.form);
-    
+    this.$actionForm = $(selectors.actionForm);
+    this.$btnAccessRequest = $(selectors.btnAccessRequest);
+
     this.clientId = this.$form.data('client-id');
     this.clientState = this.$form.data('client-state');
     this.grantToken = this.$form.data('grant-token');
+
+    this.$btnAccessRequest.on('click', this.requestToken.bind(this));
 
     this.init();
   }
@@ -371,24 +383,33 @@ loginShield.SettingsForm = (function($) {
     },
 
     exchangeToken: async function() {
-      const response = await this.handleExchangeToken();
-      if (!response) {
-        this.showMessage('No response from server', 'error');
-      }
+      try {
+        const response = await this.handleExchangeToken();
+        if (!response) {
+          this.showAccessRequestForm();
+          this.showMessage('No response from server', 'error');
+        }
 
-      if (response.error) {
-        this.showMessage(response.message, 'error');
-        return;
-      }
+        if (response.error) {
+          this.showAccessRequestForm();
+          this.showMessage(response.message, 'error');
+          return;
+        }
 
-      if (response.access_token) {
-        this.showMessage('You have activated your account successfully.');
+        if (response.access_token) {
+          this.showNormalForm();
+          this.showMessage('You have activated your account successfully.');
+        }
+      } catch (e) {
+        this.showAccessRequestForm();
+        console.error(e);
       }
     },
 
-    verifyToken: async function() {
-      const response = await this.handleVerifyToken();
+    requestToken: async function() {
+      this.$btnAccessRequest.addClass('loading');
 
+      const response = await this.handleRequestToken();
       const { payload, error, message } = response;
 
       if (payload && payload.redirect) {
@@ -397,6 +418,25 @@ loginShield.SettingsForm = (function($) {
 
       if (error) {
         this.showMessage(message, 'error');
+      }
+
+      this.$btnAccessRequest.removeClass('loading');
+    },
+
+    verifyToken: async function() {
+      const response = await this.handleVerifyToken();
+
+      const { status, error, message } = response;
+
+      if (status === 'success') {
+        this.showNormalForm();
+        console.info(message);
+        return;
+      }
+
+      if (error) {
+        this.showAccessRequestForm();
+        console.info(message);
       }
     },
 
@@ -414,6 +454,27 @@ loginShield.SettingsForm = (function($) {
             client_state    :  this.clientState,
             grant_token     :  this.grantToken,
           }),
+          beforeSend : function (xhr) {
+            xhr.setRequestHeader('X-WP-Nonce', loginshieldSettingAjax.nonce);
+          }
+        }).done(function (data) {
+          resolve(data);
+        }).fail(function (error) {
+          console.error(error);
+          reject(error);
+        });
+      });
+    },
+
+    handleRequestToken: function() {
+      return new Promise((resolve, reject) => {
+        const url = loginshieldSettingAjax.api_base + "loginshield/token/request";
+        $.ajax({
+          url        : url,
+          method     : 'POST',
+          dataType   : 'json',
+          contentType: 'application/json',
+          cache      : false,
           beforeSend : function (xhr) {
             xhr.setRequestHeader('X-WP-Nonce', loginshieldSettingAjax.nonce);
           }
@@ -445,6 +506,15 @@ loginShield.SettingsForm = (function($) {
           reject(error);
         });
       });
+    },
+
+    showAccessRequestForm: function() {
+      this.$actionForm.removeClass('loading');
+      this.$actionForm.addClass('action-required');
+    },
+
+    showNormalForm: function() {
+      this.$actionForm.removeClass('loading');
     },
 
     showMessage: function(text, status = 'normal') {

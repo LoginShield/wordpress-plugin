@@ -53,24 +53,17 @@ $grant_token = $_GET['grant_token'];
                 <a href="https://loginshield.com" target="_blank">https://loginshield.com</a>
                 <p class="wp-lead">Manage your enterprise account settings at <a href="https://loginshield.com" title="LoginShield">https://loginshield.com</a></p>
             </div>
-            <div class="form-group w-50 float-left">
-                <label for=""><?php echo esc_html__('*LoginShield Realm ID', 'loginshield') ?></label>
-                <input type="text" name="$loginshield_realm_id" value="<?php echo esc_attr($loginshield_realm_id); ?>" id="" class="form-control input_fields" placeholder="Realm ID" required>
-            </div>
-            <div class="form-group w-50 float-left">
-                <label for=""><?php echo esc_html__('*Authorization Token', 'loginshield') ?> </label>
-                <input type="text" name="$loginshield_authorization_token" value="<?php echo esc_attr($loginshield_authorization_token); ?>" id="" class="form-control input_fields" placeholder="Authorization Token" required>
-            </div>
-            <div class="error_note w-50 float-left">
-                <p class="error_msg"><strong>Note:</strong> *All fields are required.</p>
-            </div>
-
-            <div class="SubmitBtn w-50 clear float-left">
-                <button type="button" class="btn" style="position: relative;" onclick="saveLoginShieldSetting(this);"><?php echo esc_html__('Save', 'loginshield') ?><img src="<?php echo plugin_dir_url( __DIR__ ).'assets/icon/loder.gif'; ?>" class="Loderimg" style="display: none;"></button>
-                <button type="submit" style="display: none;" id="loginshield_from_submit_btn">Submit</button>
-            </div>
-            <div class="response_msg w-50 clear float-left" style="visibility: hidden;">
-                Response Message
+            <div id="ActionForm" class="form-group w-50 float-left loading">
+                <div class="loading-wrapper">
+                    <p class="lg-loader">Loading...</p>
+                </div>
+                <div class="normal-form">
+                    <p>You are ready to use LoginShield.</p>
+                </div>
+                <div class="request-form">
+                    <p>Set up your free trial or manage your subscription.</p>
+                    <a href="javascript:void(0)" id="btnAccessRequest" class="button btn-access-request">Continue</a>
+                </div>
             </div>
         </form>
     </div>

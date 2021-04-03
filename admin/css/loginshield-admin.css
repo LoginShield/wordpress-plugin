@@ -243,7 +243,7 @@ Plugin Setting Tab
 .button.loading:hover,
 .button.loading:focus,
 .button.loading:active {
-    color: transparent;
+    color: transparent !important;
     pointer-events: none;
 }
 
@@ -262,4 +262,52 @@ Plugin Setting Tab
     border-top-color: transparent;
     -webkit-animation: spin 1s infinite linear;
     animation: spin 1s infinite linear;
+}
+
+#ActionForm .loading-wrapper {
+    display: none;
+}
+
+#ActionForm .request-form {
+    display: none;
+}
+
+#ActionForm.loading .normal-form {
+    display: none;
+}
+
+#ActionForm.loading .request-form {
+    display: none;
+}
+
+#ActionForm.loading .loading-wrapper {
+    display: block;
+}
+
+#ActionForm.action-required .normal-form {
+    display: none;
+}
+
+#ActionForm.action-required .request-form {
+    display: block;
+}
+
+#ActionForm.action-required .loading-wrapper {
+    display: none;
+}
+
+#ActionForm .btn-access-request {
+    background-color: black;
+    border: 1px solid #cdcdcd;
+    border-radius: 4px;
+    padding: 10px 30px;
+    line-height: 16px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: none !important;
+    outline: 0 !important;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
 }

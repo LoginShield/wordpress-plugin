@@ -134,6 +134,11 @@ class LoginShield_RestAPI
             'callback' => array($this, 'verifyToken')
         ));
 
+        register_rest_route( $this->plugin_name, '/token/request', array(
+            'methods'  => 'POST',
+            'callback' => array($this, 'requestToken')
+        ));
+
         register_rest_route( $this->plugin_name, '/token/exchange', array(
             'methods'  => 'POST',
             'callback' => array($this, 'exchangeToken')
@@ -177,6 +182,59 @@ class LoginShield_RestAPI
         }
     }
 
+
+    public function verifyToken(WP_REST_Request $request) {
+        try {
+            $realmId = get_option('loginshield_realm_id');
+            $accessToken = get_option('loginshield_access_token');
+
+            if (!isset($accessToken) || $accessToken === "") {
+                return new WP_REST_Response([
+                    'error'      => 'no-access-token',
+                    'message'    => 'Set up your free trial or manage your subscription.',
+                ], 200);
+            }
+
+            if (isset($realmId) && $realmId !== "") {
+                return new WP_REST_Response([
+                    'status'    => 'success',
+                    'message'   => 'You are ready to use LoginShield.',
+                ], 200);
+            }
+
+            $webauthz = new Webauthz();
+            $response = $webauthz->fetchRealmId($accessToken);
+
+            if ($response->error || !isset($response->payload)) {
+                return new WP_REST_Response([
+                    'error'      => 'no-access-token',
+                    'message'    => 'Set up your free trial or manage your subscription.',
+                ], 200);
+            }
+
+            if ($response->payload->id) {
+                $realmId = $response->payload->id;
+                update_option('loginshield_realm_id', $realmId);
+
+                return new WP_REST_Response([
+                    'status'    => 'success',
+                    'message'   => 'You are ready to use LoginShield.',
+                ], 200);
+            }
+
+            return new WP_REST_Response([
+                'error'      => 'unknown-issue',
+                'message'    => 'Set up your free trial or manage your subscription.',
+            ], 200);
+        } catch (\Exception $exception) {
+            return new WP_REST_Response([
+                'error'      => 'failed-check-token',
+                'message'    => 'Service is unavailable. Please contact admin.',
+            ], 500);
+        }
+    }
+
+
     /**
      * Initialize Admin Setting
      *
@@ -184,7 +242,7 @@ class LoginShield_RestAPI
      *
      * @return WP_REST_Response
      */
-    public function verifyToken(WP_REST_Request $request) {
+    public function requestToken(WP_REST_Request $request) {
         try {
             $client_id = isset($_REQUEST['client_id']) ? $_REQUEST['client_id'] : '';
             $client_token = isset($_REQUEST['redirect_to']) ? $_REQUEST['client_token'] : '';
@@ -363,9 +421,32 @@ class LoginShield_RestAPI
             update_option('loginshield_refresh_token', $refreshToken);
             update_option('loginshield_refresh_token_max_seconds', $refreshTokenMaxSeconds);
 
+            update_option('loginshield_authorization_token', $accessToken);
+
+            $webauthz = new Webauthz();
+            $response = $webauthz->fetchRealmId($accessToken);
+
+            if ($response->error || !isset($response->payload)) {
+                return new WP_REST_Response([
+                    'error'      => 'no-access-token',
+                    'message'    => 'Set up your free trial or manage your subscription.',
+                ], 200);
+            }
+
+            if ($response->payload->id) {
+                $realmId = $response->payload->id;
+                update_option('loginshield_realm_id', $realmId);
+
+                return new WP_REST_Response([
+                    'status'        => 'granted',
+                    'access_token'  => $accessToken,
+                    'realm_id'      => $realmId,
+                ], 200);
+            }
+
             return new WP_REST_Response([
-                'status'        => 'granted',
-                'access_token'  => $accessToken,
+                'error'         => 'unknown-issue',
+                'access_token'  => 'Set up your free trial or manage your subscription.',
             ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([
