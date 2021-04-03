@@ -1,0 +1,212 @@
+/**
+ * All of the CSS for your admin-specific functionality should be
+ * included in this file.
+ */
+.wall {
+    width: 100%;
+    float: left;
+}
+
+.form-group {
+    margin-bottom: 15px !important;
+}
+
+.w-50 {
+    width: 50%;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.float-left {
+    float: left;
+}
+
+.float-right {
+    float: right;
+}
+
+.clear {
+    clear: both;
+}
+
+.bdr-left {
+    border-left: 1px solid #bcbcbc;
+}
+
+.p-3 {
+    padding: 20px;
+}
+
+.m-0 {
+    margin: 0;
+}
+
+.LOGINSHIELDFormInside form .form-group label {
+    font-size: 15px;
+    font-family: system-ui;
+    font-weight: 500;
+    display: block;
+    width: 100%;
+    padding-bottom: 5px;
+    color: #23282d;
+}
+
+.LOGINSHIELDFormInside form .form-group {
+    padding: 5px 5px 0;
+}
+
+.LOGINSHIELDFormInside form .form-group .form-control {
+    box-shadow: none;
+    outline: 0;
+    height: 36px;
+    width: 100%;
+    padding: 5px;
+    font-size: 14px;
+    font-family: sans-serif;
+    color: #000;
+    border-radius: 3px;
+    border: 1px solid #999d;
+}
+
+.LOGINSHIELDFormInside form .form-group .form-control::placeholder {
+    font-size: 12px;
+    font-family: system-ui;
+}
+
+.SubmitBtn button.btn {
+    background-color: black;
+    border: 1px solid #cdcdcd;
+    border-radius: 4px;
+    padding: 10px 30px;
+    line-height: 16px;
+    color: #fff;
+    font-family: system-ui;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: none !important;
+    outline: 0 !important;
+    cursor: pointer;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.LOGINSHIELDFormInside .SubmitBtn {
+    margin-bottom: 10px;
+    padding-left: 5px;
+    margin-top: 10px;
+}
+
+.bg-white {
+    background-color: #fff;
+    padding: 10px;
+}
+
+.p40 {
+    padding: 30px;
+}
+
+.LOGINSHIELDFormInside h2 {
+    font-size: 26px;
+    font-weight: 600;
+    font-family: sans-serif;
+    display: inline-block;
+    margin-bottom: 20px;
+    margin-left: 5px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #000;
+}
+.SubmitBtn button.btn:hover {
+    background-color: #0073aa;
+    transition: 0.5s;
+}
+img.Loderimg {
+    position: absolute;
+    width: 15px;
+    right: 10px;
+    top: 10px;
+}
+button.btn.disabled_btn {
+    opacity: .5;
+    pointer-events: none;
+}
+.response_msg {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    padding-left: 5px;
+}
+.success_msg{
+    color: #28a745;
+    visibility: visible !important;
+}
+.error_msg{
+    color: #bd2130;
+    visibility: visible !important;
+}
+.empty_fields{
+    border: solid 1px #bd2130 !important;
+}
+.error_note.w-50.float-left {
+    padding: 0 5px;
+    color: #bd2130;
+    margin-bottom: 15px;
+}
+.error_note.w-50.float-left p {
+    margin: 0px;
+}
+/*
+Plugin Setting Tab
+*/
+.LOGINSHIELDFormInside ul.tabs{
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+}
+.LOGINSHIELDFormInside ul.tabs li{
+    background: none;
+    color: #222;
+    display: inline-block;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.LOGINSHIELDFormInside ul.tabs li.current{
+    background: #ededed;
+    color: #222;
+}
+
+.LOGINSHIELDFormInside .tab-content{
+    display: none;
+    background: #ededed;
+    padding: 15px;
+}
+
+.LOGINSHIELDFormInside .tab-content.current{
+    display: inherit;
+}
+
+
+/*--Media CSS--*/
+@media(max-width: 767px) {
+    .LOGINSHIELDFormInside form .w-50 {
+        width: 100%;
+    }
+
+    .p40 {
+        padding: 15px;
+    }
+}
+
+@media(max-width: 575px) {
+    .LOGINSHIELDFormInside h2 {
+        font-size: 20px;
+    }
+
+    .LOGINSHIELDFormInside form .form-group label {
+        font-size: 13px;
+    }
+}
