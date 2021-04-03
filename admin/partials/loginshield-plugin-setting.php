@@ -35,7 +35,7 @@ if(function_exists('loginshield_option_fields')){
 <section class="login-shield">
     <div class="LOGINSHIELDFormInside clear p40">
         <h2>LoginShield Settings</h2>
-        <form id="login-shield-form" method="post" action="action.php">
+        <form id="LoginShieldSettingsForm" method="post" action="action.php">
             <?php
             settings_fields('loginshield-settings');
             do_settings_sections('loginshield-settings');
@@ -43,7 +43,7 @@ if(function_exists('loginshield_option_fields')){
             <div class="form-group w-50 float-left">
                 <label for=""><?php echo esc_html__('EndPoint URL', 'loginshield') ?></label>
                 <a href="https://loginshield.com" target="_blank">https://loginshield.com</a>
-                <p class="wp-lead m-0">Manage your enterprise account settings at <a href="https://loginshield.com" title="LoginShield">https://loginshield.com</a></p>
+                <p class="wp-lead">Manage your enterprise account settings at <a href="https://loginshield.com" title="LoginShield">https://loginshield.com</a></p>
             </div>
             <div class="form-group w-50 float-left">
                 <label for=""><?php echo esc_html__('*LoginShield Realm ID', 'loginshield') ?></label>

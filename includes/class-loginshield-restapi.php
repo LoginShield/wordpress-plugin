@@ -128,6 +128,11 @@ class LoginShield_RestAPI
             'methods'  => 'POST',
             'callback' => array($this, 'checkUserWithLogin')
         ));
+
+        register_rest_route( $this->plugin_name, '/verifyRealmInfo', array(
+            'methods'  => 'POST',
+            'callback' => array($this, 'verifyRealmInfo')
+        ));
     }
 
     /**
@@ -158,6 +163,48 @@ class LoginShield_RestAPI
 
             return new WP_REST_Response([
                 'isLoginShieldEnabled'      => $isLoginShieldEnabled,
+            ], 200);
+        } catch (\Exception $exception) {
+            return new WP_REST_Response([
+                'error'     => 'fetch-failed',
+                'message'   => $exception->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify Realm Information
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
+     */
+    public function verifyRealmInfo(WP_REST_Request $request) {
+        try {
+            $webauthz = new Webauthz();
+
+            $response = $webauthz->verifyRealmInfo();
+//            $response = 'test';
+
+//            $login = $request->get_param('login');
+//
+//            $userByLogin = get_userdatabylogin($login);
+//            $userByEmail = get_user_by('email', $login);
+//
+//            if ($userByLogin) $user = $userByLogin;
+//            if ($userByEmail) $user = $userByEmail;
+//
+//            if (!$user) {
+//                return new WP_REST_Response([
+//                    'isLoginShieldEnabled'  => false,
+//                ], 200);
+//            }
+//
+//            $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
+//            $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_enabled', true);
+
+            return new WP_REST_Response([
+                'response'      => $response,
             ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([

@@ -16,7 +16,7 @@
  * Plugin Name:       LoginShield
  * Plugin URI:        https://loginshield.com/
  * Description:       This plugin is created to implement LoginShield functionality in WordPress.
- * Version:           1.0.3
+ * Version:           1.0.4
  * Author:            Luka Modric
  * Author URI:        https://loginshield.com/
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'LOGINSHIELD_VERSION', '1.0.3' );
+define( 'LOGINSHIELD_VERSION', '1.0.4' );
 
 /**
  * The code that runs during plugin activation.
@@ -44,6 +44,14 @@ define( 'LOGINSHIELD_VERSION', '1.0.3' );
 function activate_loginshield() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-loginshield-activator.php';
 	LoginShield_Activator::activate();
+
+    // Don't do redirects when multiple plugins are bulk activated
+    if (
+        ( isset( $_REQUEST['action'] ) && 'activate-selected' === $_REQUEST['action'] ) &&
+        ( isset( $_POST['checked'] ) && count( $_POST['checked'] ) > 1 ) ) {
+        return;
+    }
+    add_option( 'loginshield_activation_redirect', wp_get_current_user()->ID );
 }
 
 /**

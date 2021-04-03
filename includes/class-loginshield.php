@@ -126,6 +126,7 @@ class LoginShield {
          * The class responsible for 3rd party API integration
          */
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/RealmClient.php';
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/Webauthz.php';
 
         /**
          * The class responsible for defining all Rest APIs

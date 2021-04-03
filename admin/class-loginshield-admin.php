@@ -64,6 +64,7 @@ class LoginShield_Admin {
         // Initialize settings
         add_action( 'admin_init', array( $this,'loginshield_include_files' ) );
 		add_action( 'admin_init', array( $this,'loginshield_settings_register' ) );
+        add_action( 'admin_init', array( $this,'loginshield_activation_redirect' ) );
 
         // Add custom template
         add_filter( 'theme_page_templates', array( $this, 'add_new_template' ) );
@@ -329,5 +330,19 @@ class LoginShield_Admin {
          */
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/loginshield-login.php';
 
+    }
+
+
+    /**
+     * Redirects the user after plugin activation.
+     *
+     * @since 1.0.4
+     */
+    public function loginshield_activation_redirect() {
+        if ( intval( get_option( 'loginshield_activation_redirect', false ) ) === wp_get_current_user()->ID ) {
+            delete_option( 'loginshield_activation_redirect' );
+            wp_safe_redirect( admin_url( '/options-general.php?page=loginshield' ) );
+            exit;
+        }
     }
 }

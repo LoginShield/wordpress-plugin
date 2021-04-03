@@ -103,8 +103,11 @@ publicloginshield.LoginForm = (function($) {
 		},
 
     handleLogin: async function(e) {
-      if (this.isLoading)
-        return;
+
+    	console.log('test');
+
+      // if (this.isLoading)
+      //   return;
 
       this.isPasswordSubmitted = true;
 
