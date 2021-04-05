@@ -35,8 +35,9 @@ class LoginShield_Activator {
          *
          * @since    1.0.3
          */
-        $check_login_page_exist = get_page_by_title('LoginShield Login', 'OBJECT', 'page');
-        if(empty($check_login_page_exist)) {
+        $loginPage = get_page_by_title('LoginShield Login', 'OBJECT', 'page');
+        $page_id = '';
+        if(empty($loginPage)) {
             $page_id = wp_insert_post(
                 array(
                     'comment_status' => 'close',
@@ -52,7 +53,10 @@ class LoginShield_Activator {
                 )
             );
             update_option( 'loginshield_login_page', $page_id );
-            update_post_meta( $page_id, '_wp_page_template', 'templates/loginshield-empty.php' );
+        } else {
+            update_option( 'loginshield_login_page', $loginPage->ID );
+            $page_id = $loginPage->ID;
         }
+        update_post_meta( $page_id, '_wp_page_template', 'templates/loginshield-empty.php' );
 	}
 }

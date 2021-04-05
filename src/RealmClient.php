@@ -153,6 +153,55 @@ class RealmClient
         }
     }
 
+    /**
+     * Delete an existing user.
+     *
+     * @param string $realmScopedUserId     the user's LoginShield user id
+conflict error
+     *
+     * @return mixed
+     */
+    public function deleteRealmUser($realmScopedUserId)
+    {
+        try {
+            $url = $this->endpointURL . '/service/realm/user/delete';
+
+            $fields = array (
+                'realmId' => $this->realmId,
+                'realmScopedUserId' => $realmScopedUserId
+            );
+            $data_string = json_encode($fields);
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                'Authorization: Token ' . $this->authorizationToken,
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data_string))
+            );
+
+            $apiResponse = curl_exec($ch);
+            curl_close($ch);
+
+            $response = json_decode($apiResponse);
+
+            if ($response && $response->isDeleted) {
+                return $response;
+            }
+
+            return (object) array(
+                'error' => 'unexpected-response',
+                'response'=> $response
+            );
+        } catch (\Exception $exception) {
+            return (object) array(
+                'error' => 'registration-failed',
+                'response'=> $exception
+            );
+        }
+    }
 
     /**
      * Start Login.
@@ -258,7 +307,7 @@ class RealmClient
 
 
     /**
-     * An utility to check if a string starts with a sub string or not
+     * A utility to check if a string starts with a sub string or not
      *
      * @param string $haystack     Resource String
      * @param string $needle       Target Sub String

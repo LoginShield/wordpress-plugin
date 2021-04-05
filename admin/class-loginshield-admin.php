@@ -87,8 +87,6 @@ class LoginShield_Admin {
 	public function enqueue_styles() {
 
 		/**
-		 * This function is provided for demonstration purposes only.
-		 *
 		 * An instance of this class should be passed to the run() function
 		 * defined in LoginShield_Loader as all of the hooks are defined
 		 * in that particular class.
@@ -111,8 +109,6 @@ class LoginShield_Admin {
 	public function enqueue_scripts() {
 
 		/**
-		 * This function is provided for demonstration purposes only.
-		 *
 		 * An instance of this class should be passed to the run() function
 		 * defined in LoginShield_Loader as all of the hooks are defined
 		 * in that particular class.
@@ -167,23 +163,24 @@ class LoginShield_Admin {
     }
 
     /**
-     * LoginShield Settings Page
+     * LoginShield Settings Page. This is what users see when they edit their profile.
      *
      * @since 1.0.0
      */
-    public function crf_show_extra_profile_fields($user) {
+    public function loginshield_show_user_profile($user) {
         $current_user = wp_get_current_user();
         $user_id = $current_user->ID;
         $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
-        $isEnabled = get_user_meta($user_id, 'loginshield_is_enabled', true);
+        $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
         $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
+        $loginshield_user_id = get_user_meta($user_id, 'loginshield_user_id', true);
 
         $mode = $variable = $_GET['mode'];
         $loginshield = $variable = $_GET['loginshield'];
 
         ?>
         <h2>LoginShield Management</h2>
-		<table id="LoginShieldForm" class="form-table" <?php if ((!$isRegistered || !$isConfirmed) && isset($mode) && isset($loginshield)): ?>data-mode="<?php echo $mode; ?>" data-loginshield="<?php echo $loginshield; ?>"<?php endif; ?>>
+		<table id="LoginShieldForm" class="form-table" <?php if ((!$isRegistered || !$isConfirmed) && isset($mode) && isset($loginshield)): ?>data-mode="<?php echo esc_attr($mode); ?>" data-loginshield="<?php echo esc_attr($loginshield); ?>"<?php endif; ?>>
             <tbody>
                 <tr id="RegisterForm" <?php if ($isRegistered && $isConfirmed): ?>style="display: none;"<?php endif; ?>>
                     <th>
@@ -199,8 +196,8 @@ class LoginShield_Admin {
                         <label><?php esc_html_e('Security', 'crf');?></label>
                     </th>
                     <td>
-                        <input type="checkbox" id="security" name="security" <?php if ($isEnabled): ?>checked<?php endif; ?>>
-                        <label for="security"><?php esc_html_e('Protect this account with LoginShield', 'crf');?></label>
+                        <input type="checkbox" id="loginshield_active" name="loginshield_active" <?php if ($isActivated): ?>checked<?php endif; ?>>
+                        <label for="loginshield_active"><?php esc_html_e('Protect this account with LoginShield', 'crf');?></label>
                     </td>
                 </tr>
                 <tr>
@@ -208,7 +205,7 @@ class LoginShield_Admin {
                         <label><?php esc_html_e('Learn More', 'crf');?></label>
                     </th>
                     <td>
-                        <a href="https://loginshield.com/article/one-tap-login/" target="_blank">https://loginshield.com/article/one-tap-login</a>
+                        <a href="https://loginshield.com/article/one-tap-login/" target="_blank">https://loginshield.com/article/one-tap-login/</a>
                     </td>
                 </tr>
                 <tr>
@@ -216,9 +213,75 @@ class LoginShield_Admin {
                         <label><?php esc_html_e('Get the free app', 'crf');?></label>
                     </th>
                     <td>
-                        <a href=" https://loginshield.com/software/" target="_blank">https://loginshield.com/software</a>
+                        <a href="https://loginshield.com/software/" target="_blank">https://loginshield.com/software/</a>
                     </td>
                 </tr>
+                <?php if(current_user_can('edit_users') && ($isRegistered || $isConfirmed || $isActivated || $loginshield_user_id)): ?>
+                <tr>
+                    <th>
+                        <label><?php esc_html_e('Reset LoginShield', 'crf');?></label>
+                    </th>
+                    <td>
+                        <button type="button" id="ResetLoginShield" data-user-id="<?php echo esc_attr($user_id); ?>" class="button button-primary"><?php esc_html_e('Reset LoginShield', 'crf');?></button>
+                        <p><?php esc_html_e('Reset will deactivate LoginShield for the user and delete the registration. The user will need to register again from their profile page.', 'crf');?></p>
+                    </td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+        <?php
+    }
+
+    /**
+     * LoginShield Settings Page. This is what administrators see when they edit a user's profile.
+     *
+     * @since 1.0.0
+     */
+    public function loginshield_edit_user_profile($user) {
+        $user_id = $user->ID;
+        $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
+        $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
+        $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
+        $loginshield_user_id = get_user_meta($user_id, 'loginshield_user_id', true);
+        ?>
+        <h2>LoginShield Management</h2>
+		<table id="LoginShieldForm" class="form-table">
+            <tbody>
+                <tr>
+                    <th>
+                        <?php esc_html_e('Registered', 'crf');?>
+                    </th>
+                    <td>
+                        <?php if($isRegistered && $loginshield_user_id): ?>
+                        <?php esc_html_e('Yes', 'crf');?> (LoginShield realm-scoped user id: <?php echo esc_html($loginshield_user_id); ?>)
+                        <?php else: ?>
+                        <?php esc_html_e('No', 'crf');?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        <?php esc_html_e('Enabled', 'crf');?>
+                    </th>
+                    <td>
+                        <?php if($isActivated && isConfirmed): ?>
+                        <?php esc_html_e('Yes', 'crf');?>
+                        <?php else: ?>
+                        <?php esc_html_e('No', 'crf');?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php if($isRegistered || $isConfirmed || $isActivated || $loginshield_user_id): ?>
+                <tr>
+                    <th>
+                        <label><?php esc_html_e('Reset LoginShield', 'crf');?></label>
+                    </th>
+                    <td>
+                        <button type="button" id="ResetLoginShield" data-user-id="<?php echo esc_attr($user_id); ?>" class="button button-primary"><?php esc_html_e('Reset LoginShield', 'crf');?></button>
+                        <p><?php esc_html_e('Reset will deactivate LoginShield for the user and delete the registration. The user will need to register again from their profile page.', 'crf');?></p>
+                    </td>
+                </tr>
+                <?php endif; ?>
             </tbody>
         </table>
         <?php

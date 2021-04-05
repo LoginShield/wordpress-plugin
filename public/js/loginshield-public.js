@@ -124,6 +124,7 @@ publicloginshield.LoginForm = (function($) {
 						this.redirect();
 					} else {
 						this.showMessage('Invalid username or password', 'error');
+                        this.resetLoginForm();
 					}
 				})
 				.catch(error => {
@@ -213,9 +214,9 @@ publicloginshield.LoginForm = (function($) {
         width: 500,
         height: 460,
         action: 'start',
-        mode: 'link-device',
+        mode: null,
         forward: forward,
-        rememberMe: this.rememberMe,
+        rememberMe: true, // this.rememberMe,
         onResult: function (result) {
           if (!result)
             return;
@@ -311,7 +312,7 @@ publicloginshield.LoginForm = (function($) {
         height: 460,
         action: 'resume',
         forward: forward,
-        rememberMe: true,
+        rememberMe: true, // this.rememberMe,
         onResult: function (result) {
           if (!result)
             return;
@@ -324,26 +325,40 @@ publicloginshield.LoginForm = (function($) {
     finishLoginShield: async function({ verifyToken }) {
       console.log(`finishLoginShield: verifying login with token: ${verifyToken}`);
       const { isAuthenticated, error, isConfirmed } = await this.loginWithLoginShield({ verifyToken });
+      console.log(`finishLoginShield: isAuthenticated ${isAuthenticated}`);
       if (isAuthenticated) {
+        // this.showMessage('LoginShield account registration is succeed.', 'success');
         this.redirect();
-        this.showMessage('LoginShield account registration is succeed.', 'success');
       } else if (error) {
-        this.resetLoginForm();
-        this.showMessage(`finishLoginShield error: ${error}`, 'error');
         console.error(`finishLoginShield error: ${error}`);
+        this.resetLoginForm();
+        this.showMessage(`Login failed: ${error}`, 'error');
+      } else {
+        console.error('finishLoginShield: unknown error');
+        this.resetLoginForm();
+        this.showMessage('Login failed', 'error');
       }
     },
 
 		redirect: function() {
 			const redirectTo = this.$form.data('redirect-to');
-			if (!redirectTo)
+			if (redirectTo) {
+                window.location = redirectTo;
+            } else {
 				window.location = '/';
-			window.location = redirectTo;
+            }
 		},
 
     resetLoginForm: function() {
+      this.isLoading = false;
       this.$formGroupLogin.show();
+      this.$btnNext.show();
+      this.$btnNext.removeClass('loading');
       this.$formGroupAction.show();
+      this.$formGroupPassword.hide();
+      this.$password.val("");
+      this.$btnLogin.hide();
+      this.$btnLogin.removeClass('loading');
       this.$formGroupLoginShield.hide();
       this.$iframe.html('');
       this.$form.removeClass('onLoginShield');
@@ -368,17 +383,21 @@ publicloginshield.LoginForm = (function($) {
           this.finishLoginShield({ verifyToken: result.verifyToken });
           break;
         case 'error':
-          this.showMessage(`onResult: ${result.error}`, 'error');
+          this.showMessage(`Login failed: ${result.error}`, 'error');
           this.resetLoginForm();
           break;
         case 'cancel':
-          this.showMessage(`onResult: ${result.status}`);
+          this.showMessage('Login cancelled', 'warning');
+          this.resetLoginForm();
+          break;
+        case 'timeout':
+          this.showMessage('Login request expired', 'warning');
           this.resetLoginForm();
           break;
         default:
-          this.showMessage(`onResult: unknown status ${result.status}`, 'error');
-          this.handleUnavailableService();
           console.error(`onResult: unknown status ${result.status}`);
+          this.showMessage(`Login failed: ${result.status}`, 'error');
+          this.handleUnavailableService();
           break;
       }
     },

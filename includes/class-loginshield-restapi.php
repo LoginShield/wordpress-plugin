@@ -114,6 +114,11 @@ class LoginShield_RestAPI
             'callback' => array($this, 'editAccount')
         ));
 
+        register_rest_route( $this->plugin_name, '/account/reset', array(
+            'methods'  => 'POST',
+            'callback' => array($this, 'resetAccount')
+        ));
+
         register_rest_route( $this->plugin_name, '/session/login/loginshield', array(
             'methods'  => 'POST',
             'callback' => array($this, 'loginWithLoginShield')
@@ -169,7 +174,7 @@ class LoginShield_RestAPI
             }
 
             $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-            $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_enabled', true);
+            $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_activated', true);
 
             return new WP_REST_Response([
                 'isLoginShieldEnabled'      => $isLoginShieldEnabled,
@@ -195,10 +200,10 @@ class LoginShield_RestAPI
                 ], 200);
             }
 
-            if (isset($realmId) && $realmId !== "") {
+            if (!isset($realmId) || $realmId === "") {
                 return new WP_REST_Response([
-                    'status'    => 'success',
-                    'message'   => 'You are ready to use LoginShield.',
+                    'error'      => 'no-realm-id',
+                    'message'    => 'Set up your free trial or manage your subscription.',
                 ], 200);
             }
 
@@ -409,7 +414,7 @@ class LoginShield_RestAPI
             $refreshToken = $payload->refresh_token;
             $refreshTokenMaxSeconds = $payload->refresh_token_max_seconds;
 
-            if (!isset($accessToken) || sizeof($accessToken) === 0) {
+            if (!isset($accessToken) || $accessToken === "") {
                 return new WP_REST_Response([
                     'error'      => 'access-denied',
                     'message'    => 'Exchange: no access token in response',
@@ -501,10 +506,10 @@ class LoginShield_RestAPI
             if ($mode === 'activate-loginshield') {
                 $current_user = wp_get_current_user();
                 $user_id = $current_user->ID;
-                $isEnabled = get_user_meta($user_id, 'loginshield_is_enabled', true);
+                $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
                 $loginshieldUserId = get_user_meta($user_id, 'loginshield_user_id', true);
 
-                if ($isEnabled && $loginshieldUserId) {
+                if ($isActivated && $loginshieldUserId) {
                     $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
                     $startLoginResponse = $loginshield->startLogin($loginshieldUserId, $this->endpoint_url . '/wp-admin/profile.php?mode=resume-loginshield');
                     return new WP_REST_Response([
@@ -534,15 +539,15 @@ class LoginShield_RestAPI
                 $verifyLoginResponse = $loginshield->verifyLogin($verifyToken);
                 if ($verifyLoginResponse->error || $verifyLoginResponse->fault) {
                     return new WP_REST_Response([
-                        'isAuthenticated'    => false
+                        'isAuthenticated'    => false,
                     ], 200);
                 }
                 if ($verifyLoginResponse->realmId == $this->loginshield_realm_id) {
                     $user_id = $this->getLoginShieldUserId($verifyLoginResponse->realmScopedUserId);
                     if ($user_id) {
-                        $isEnabled = get_user_meta($user_id, 'loginshield_is_enabled', true);
-                        if (!$isEnabled) {
-                            $this->setUserMeta($user_id, 'loginshield_is_enabled', true, true);
+                        $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
+                        if (!$isActivated) {
+                            $this->setUserMeta($user_id, 'loginshield_is_activated', true, true);
                             $this->setUserMeta($user_id, 'loginshield_is_registered', true, true);
                             $this->setUserMeta($user_id, 'loginshield_is_confirmed', true, true);
                             $this->setUserMeta($user_id, 'loginshield_user_id', $verifyLoginResponse->realmScopedUserId, true);
@@ -574,7 +579,7 @@ class LoginShield_RestAPI
                 }
 
                 $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-                $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_enabled', true);
+                $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_activated', true);
                 $loginshieldUserId = get_user_meta($userId, 'loginshield_user_id', true);
 
                 if ($isLoginShieldEnabled && $loginshieldUserId) {
@@ -618,31 +623,62 @@ class LoginShield_RestAPI
                 return $this->updateSecurity($request);
             }
 
-            $loginshield = $request->get_param('loginshield');
-            if (!($loginshield && isset($loginshield->isEnabled))) {
+            return new WP_REST_Response([
+                'error'    => 'edit-account-failed',
+                'message'    => 'Bad Request'
+            ], 400);
+
+        } catch (\Exception $exception) {
+            return new WP_REST_Response([
+                'error'     => 'edit-account-failed',
+                'message'   => $exception->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset Account (admin feature)
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return WP_REST_Response
+     */
+    public function resetAccount(WP_REST_Request $request)
+    {
+        try {
+            $user_id = $request->get_param('user_id');
+            
+            if (!isset($user_id) || $user_id == '') {
                 return new WP_REST_Response([
-                    'error'    => 'edit-account-failed',
+                    'error'    => 'reset-account-failed',
                     'message'    => 'Bad Request'
                 ], 400);
             }
 
-            $current_user = wp_get_current_user();
-            $user_id = $current_user->ID;
-
-            $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
-            $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
-            $isEnabled = get_user_meta($user_id, 'loginshield_is_enabled', true);
-
-            if ($isRegistered && $isConfirmed) {
-                if (isset($isEnabled)) {
-                    update_user_meta($user_id, 'loginshield_is_enabled', $loginshield->isEnabled);
-                } else {
-                    add_user_meta($user_id, 'loginshield_is_enabled', $loginshield->isEnabled, true);
-                }
+            if (!current_user_can( 'edit_user', $user_id )) {
+                return new WP_REST_Response([
+                    'error'    => 'reset-account-failed',
+                    'message'    => 'Forbidden'
+                ], 403);
             }
+            
+            // delete the user registration via LoginShield API
+            $loginshield_user_id = get_user_meta($user_id, 'loginshield_user_id', true);
+            $isDeletedFromAuthenticationServer = false;
+            if ($loginshield_user_id) {
+                $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
+                $deleteUserResponse = $loginshield->deleteRealmUser($loginshieldUserId);
+                $isDeletedFromAuthenticationServer = $deleteUserResponse->isDeleted;
+            }
+            
+            delete_user_meta($user_id, 'loginshield_is_registered');
+            delete_user_meta($user_id, 'loginshield_is_confirmed');
+            delete_user_meta($user_id, 'loginshield_is_activated');
+            delete_user_meta($user_id, 'loginshield_user_id');
 
             return new WP_REST_Response([
-                'isEdited' => true
+                'isEdited' => true,
+                'isDeleted' => $isDeletedFromAuthenticationServer
             ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([
@@ -675,7 +711,7 @@ class LoginShield_RestAPI
             }
 
             $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
-            $realmScopedUserId = $this->getRandomHex(16);
+            $realmScopedUserId = $this->generateRandomId(16);
 
             $response = $loginshield->createRealmUser($realmScopedUserId, $user_name, $user_email, true);
             if ($response->error) {
@@ -686,9 +722,9 @@ class LoginShield_RestAPI
             }
 
             if ($response->isCreated) {
-                $this->setUserMeta($user_id, 'loginshield_is_enabled', false, true);
+                $this->setUserMeta($user_id, 'loginshield_is_activated', false, true);
                 $this->setUserMeta($user_id, 'loginshield_is_registered', true, true);
-                $this->setUserMeta($user_id, 'loginshield_is_enabled', false, true);
+                $this->setUserMeta($user_id, 'loginshield_is_confirmed', false, true);
                 $this->setUserMeta($user_id, 'loginshield_user_id', $realmScopedUserId, true);
 
                 $this->addNewLoginShieldUser($realmScopedUserId, $user_id);
@@ -726,8 +762,8 @@ class LoginShield_RestAPI
     public function updateSecurity(WP_REST_Request $request)
     {
         try {
-            $isSecured = $request->get_param('isSecured');
-            if (!isset($isSecured)) {
+            $isActive = $request->get_param('isActive');
+            if (!isset($isActive)) {
                 return new WP_REST_Response([
                     'error'     => 'update failed',
                     'message'   => 'missing parameter'
@@ -736,12 +772,23 @@ class LoginShield_RestAPI
 
             $current_user = wp_get_current_user();
             $user_id = $current_user->ID;
+            
+            $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
+            $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
+            
+            if ($isRegistered && $isConfirmed) {
+                $this->setUserMeta($user_id, 'loginshield_is_activated', $isActive, true);
+                return new WP_REST_Response([
+                    'isActive'     => $isActive
+                ], 200);
+            } else {
+                $this->setUserMeta($user_id, 'loginshield_is_activated', false, true);
+                return new WP_REST_Response([
+                    'isActive'     => false,
+                    'error'        => 'Must complete registration to activate'
+                ], 200);
+            }
 
-            $this->setUserMeta($user_id, 'loginshield_is_enabled', $isSecured, true);
-
-            return new WP_REST_Response([
-                'isSecured'     => $isSecured
-            ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([
                 'error'     => 'update failed',
@@ -766,10 +813,13 @@ class LoginShield_RestAPI
             'user_password' => $password,
             'remember'      => $remember
         );
-        $user = wp_signon( $creds, false );
+        $user = wp_signon( $creds );
 
         if (is_wp_error($user))
             return false;
+
+        wp_set_current_user ( $user->ID );
+        wp_set_auth_cookie  ( $user->ID );
 
         return true;
     }
@@ -871,17 +921,14 @@ class LoginShield_RestAPI
      *
      * @return string
      */
-    private function getRandomHex($length)
-    {
-        $result = '';
-        $moduleLength = 40;   // we use sha1, so module is 40 chars
-        $steps = round(($length/$moduleLength) + 0.5);
-
-        for( $i=0; $i<$steps; $i++ ) {
-            $result .= sha1( uniqid() . md5( rand() . uniqid() ) );
+    private function generateRandomId($length = 16) {
+        $characters = '0123456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
-
-        return substr( $result, 0, $length );
+        return $randomString;
     }
 
     /**

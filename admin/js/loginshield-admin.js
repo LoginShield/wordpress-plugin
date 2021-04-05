@@ -12,8 +12,9 @@ loginShield.AdminForm = (function($) {
   	registerForm: '#RegisterForm',
   	activateForm: '#ActivateForm',
   	iframe: '#loginshield-content',
-  	security: '#security',
+  	isActiveCheckbox: '#loginshield_active',
     btnActivateLoginShield: '#ActivateLoginShield',
+    btnResetLoginShield: '#ResetLoginShield',
   };
 
   function AdminForm() {
@@ -24,11 +25,13 @@ loginShield.AdminForm = (function($) {
   	this.$registerForm = this.$form.find(selectors.registerForm);
   	this.$activateForm = this.$form.find(selectors.activateForm);
   	this.$iframe = this.$form.find(selectors.iframe);
-  	this.$security = this.$form.find(selectors.security);
+  	this.$isActiveCheckbox = this.$form.find(selectors.isActiveCheckbox);
     this.$btnActivateLoginShield = this.$form.find(selectors.btnActivateLoginShield);
+    this.$btnResetLoginShield = this.$form.find(selectors.btnResetLoginShield);
 
-    this.$security.on('change', this.handleSecurityChange.bind(this));
+    this.$isActiveCheckbox.on('change', this.handleSecurityChange.bind(this));
     this.$btnActivateLoginShield.on('click', this.handleActivateLoginShield.bind(this));
+    this.$btnResetLoginShield.on('click', this.handleResetLoginShield.bind(this));
 
     this.init();
   }
@@ -45,25 +48,25 @@ loginShield.AdminForm = (function($) {
 
     handleSecurityChange: async function(e) {
       const action = 'update-security';
-      const isSecured = e.target.checked;
+      const isActive = e.target.checked;
 
-      const response = await this.updateSecurity({ action, isSecured });
+      const response = await this.updateSecurity({ action, isActive });
 
       if (!response || response.error) {
         this.showMessage(response.message, 'error');
         return;
       }
 
-      if (isSecured) {
-        this.showMessage('Your account is protected by LoginShield.');
+      if (isActive) {
+        this.showMessage('Your account is now protected by LoginShield.');
       } else {
-        this.showMessage('Your account is not protected by LoginShield.');
+        this.showMessage('LoginShield protection is now deactivated for your account.', 'warning');
       }
     },
 
     updateSecurity: function(payload) {
       return new Promise((resolve, reject) => {
-        const { action, isSecured } = payload;
+        const { action, isActive } = payload;
         const url = loginshieldSettingAjax.api_base + "loginshield/account/edit";
         $.ajax({
           url        : url,
@@ -73,7 +76,7 @@ loginShield.AdminForm = (function($) {
           cache      : false,
           data       : JSON.stringify({
             action        :  action,
-            isSecured     :  isSecured,
+            isActive      :  isActive,
           }),
           beforeSend : function (xhr) {
             xhr.setRequestHeader('X-WP-Nonce', loginshieldSettingAjax.nonce);
@@ -90,18 +93,16 @@ loginShield.AdminForm = (function($) {
     handleActivateLoginShield: async function(e) {
       try {
         const self = this;
-        const action = 'register-loginshield-user';
-        const mode = 'activate-loginshield';
 
         this.$btnActivateLoginShield.addClass('loading');
 
-        const response = await this.registerLoginShieldUser({ action });
+        const response = await this.registerLoginShieldUser({ action: 'register-loginshield-user' });
         if (!response || response.error) {
           this.$btnActivateLoginShield.removeClass('loading');
           return;
         }
 
-        const { forward } = await this.loginWithLoginShield({ mode });
+        const { forward } = await this.loginWithLoginShield({ mode: 'activate-loginshield' });
 
         if (!forward)
           return;
@@ -133,7 +134,7 @@ loginShield.AdminForm = (function($) {
 
     registerLoginShieldUser: function (accountInfo) {
       return new Promise((resolve, reject) => {
-        const { action, loginshield } = accountInfo;
+        const { action } = accountInfo;
         const url = loginshieldSettingAjax.api_base + "loginshield/account/edit";
         $.ajax({
           url        : url,
@@ -143,7 +144,30 @@ loginShield.AdminForm = (function($) {
           cache      : false,
           data       : JSON.stringify({
             action          :  action,
-            loginshield     :  loginshield,
+          }),
+          beforeSend : function (xhr) {
+            xhr.setRequestHeader('X-WP-Nonce', loginshieldSettingAjax.nonce);
+          }
+        }).done(function (data) {
+          resolve(data);
+        }).fail(function (error) {
+          console.error(error);
+          reject(error);
+        });
+      });
+    },
+
+    resetLoginShieldUser: function (user_id) {
+      return new Promise((resolve, reject) => {
+        const url = loginshieldSettingAjax.api_base + "loginshield/account/reset";
+        $.ajax({
+          url        : url,
+          method     : 'POST',
+          dataType   : 'json',
+          contentType: 'application/json',
+          cache      : false,
+          data       : JSON.stringify({
+            user_id          :  user_id,
           }),
           beforeSend : function (xhr) {
             xhr.setRequestHeader('X-WP-Nonce', loginshieldSettingAjax.nonce);
@@ -230,23 +254,27 @@ loginShield.AdminForm = (function($) {
           this.finishLoginShield({ verifyToken: result.verifyToken });
           break;
         case 'error':
-          this.showMessage(`onResult: ${result.error}`, 'error');
+          this.showMessage(`Login failed: ${result.error}`, 'error');
           this.resetLoginForm();
           break;
         case 'cancel':
-          this.showMessage(`onResult: ${result.status}`);
+          this.showMessage('Login cancelled', 'warning');
+          this.resetLoginForm();
+          break;
+        case 'timeout':
+          this.showMessage('Login request expired', 'warning');
           this.resetLoginForm();
           break;
         default:
-          this.showMessage(`onResult: unknown status ${result.status}`, 'error');
           console.error(`onResult: unknown status ${result.status}`);
+          this.showMessage(`Login failed: ${result.status}`, 'error');
           break;
       }
     },
 
     enableActivateForm: function(isConfirmed = false) {
       if (isConfirmed) {
-        this.$security.attr('checked', true);
+        this.$isActiveCheckbox.attr('checked', true);
       }
 
       this.$iframe.html('');
@@ -258,6 +286,25 @@ loginShield.AdminForm = (function($) {
       this.$btnActivateLoginShield.show();
       this.$btnActivateLoginShield.removeClass('loading');
       this.$iframe.html('');
+    },
+
+    handleResetLoginShield: async function(e) {
+      try {
+        const self = this;
+
+        this.$btnResetLoginShield.addClass('loading');
+
+        const response = await this.resetLoginShieldUser(this.$btnResetLoginShield.attr('data-user-id'));
+        if (!response || response.error) {
+          return;
+        }
+        window.location.reload(true); // refresh the current page to show changes
+      } catch (e) {
+        this.showMessage('Service is unavailable', 'error');
+        console.error(e);
+      } finally {
+        this.$btnResetLoginShield.removeClass('loading');
+      }
     },
 
     showMessage: function(text, status = 'normal') {
@@ -399,6 +446,13 @@ loginShield.SettingsForm = (function($) {
         if (response.access_token) {
           this.showNormalForm();
           this.showMessage('You have activated your account successfully.');
+          // replace the location to remove the query parameters and load the realm id now that it's available
+          const searchParams = new URLSearchParams(window.location.search);
+          searchParams.delete("client_id");
+          searchParams.delete("client_state");
+          searchParams.delete("grant_token");
+          const newURL = new URL(window.location.protocol + "//" + window.location.host + window.location.pathname + "?" + searchParams.toString() );
+          window.location.replace(newURL.toString());
         }
       } catch (e) {
         this.showAccessRequestForm();
@@ -630,7 +684,7 @@ loginShield.SettingsForm = (function($) {
 function saveLoginShieldSetting(e) {
 
 	jQuery(e).addClass('disabled_btn');
-	jQuery('.Loderimg').show();
+	jQuery('.Loaderimg').show();
 	var error = 0;
 	jQuery("#LoginShieldSettingsForm .input_fields").each(function () {
 		if (jQuery(this).val() == '') {
@@ -640,8 +694,8 @@ function saveLoginShieldSetting(e) {
 	});
 	if (error > 0) {
 		jQuery(e).removeClass('disabled_btn');
-		jQuery('.Loderimg').hide();
-		jQuery('.response_msg').html('*There is some error. Please check all the fields and try again.');
+		jQuery('.Loaderimg').hide();
+		jQuery('.response_msg').html('*Cannot save changes. Please check all the fields and try again.');
 		jQuery('.response_msg').addClass('error_msg');
 		jQuery('.response_msg').removeClass('success_msg');
 		setTimeout(function () {
@@ -660,10 +714,10 @@ function saveLoginShieldSetting(e) {
 		},
 		success: function(res) {
 			jQuery(e).removeClass('disabled_btn');
-			jQuery('.Loderimg').hide();
+			jQuery('.Loaderimg').hide();
 			var obj = JSON.parse(res);
 			if(obj.status==0){
-				jQuery('.response_msg').html('*There some error. Please check all the fields and try again.');
+				jQuery('.response_msg').html('*Cannot save changes. Please check all the fields and try again.');
 				jQuery('.response_msg').addClass('error_msg');
 				jQuery('.response_msg').removeClass('success_msg');
 				setTimeout(function() {

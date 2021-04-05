@@ -29,3 +29,24 @@
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
+
+delete_option('loginshield_activation_redirect');
+delete_option('loginshield_realm_id');
+delete_option('loginshield_authorization_token');
+delete_option('loginshield_login_page');
+delete_option('loginshield_access_token');
+delete_option('loginshield_access_token_max_seconds');
+delete_option('loginshield_refresh_token');
+delete_option('loginshield_refresh_token_max_seconds');
+delete_option('loginshield_authorization_token');
+delete_option('map_loginshielduserid_to_id');
+delete_option('loginshield_realm');
+delete_option('loginshield_scope');
+delete_option('loginshield_path');
+delete_option('loginshield_webauthz_discovery_uri');
+delete_option('loginshield_webauthz_register_uri');
+delete_option('loginshield_webauthz_request_uri');
+delete_option('loginshield_webauthz_exchange_uri');
+delete_option('loginshield_client_id');
+delete_option('loginshield_client_token');
+delete_option('loginshield_client_state');

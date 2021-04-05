@@ -35,6 +35,16 @@ body {
     margin: 0;
 }
 
+h1.sitename {
+    font-size: 1.5em;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+h1.sitename a {
+    text-decoration: none;
+}
+
 .d-none {
     display: none !important;
 }

@@ -15,7 +15,7 @@
 
 <?php
 
-    $login_header_url = __( 'https://wordpress.org/' );
+    $login_header_url = get_bloginfo('url');
 
     /**
      * Filters link URL of the header logo above login form.
@@ -44,7 +44,7 @@
         __( 'Usage of the title attribute on the login logo is not recommended for accessibility reasons. Use the link text instead.' )
     );
 
-    $login_header_text = empty( $login_header_title ) ? __( 'Powered by WordPress' ) : $login_header_title;
+    $login_header_text = empty( $login_header_title ) ? get_bloginfo('name') : $login_header_title;
 
     $redirect_to = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : get_home_url();
     $mode = $variable = $_GET['mode'];
@@ -55,16 +55,17 @@
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 
 <div id="LoginShieldLogin">
-    <h1 class="d-none"><a href="<?php echo esc_url( $login_header_url ); ?>"><?php echo $login_header_text; ?></a></h1>
-    <div id="LoginShieldLoginForm" data-redirect-to="<?php echo $redirect_to; ?>" data-mode="<?php echo $mode; ?>" data-loginshield="<?php echo $loginshield; ?>">
+    <h1><a href="<?php echo esc_attr( $login_header_url ); ?>"><?php echo esc_html($login_header_text); ?></a></h1>
+    <div id="LoginShieldLoginForm" data-redirect-to="<?php echo esc_attr($redirect_to); ?>" data-mode="<?php echo esc_attr($mode); ?>" data-loginshield="<?php echo esc_attr($loginshield); ?>">
+        <form>
         <div class="form-group form-group-login">
             <label for="user_login">Username or Email Address</label>
-            <input type="text" name="log" id="user_login" class="input" value="" size="20" autocapitalize="off">
+            <input type="text" name="log" id="user_login" autocomplete="username" class="input" value="" size="20" autocapitalize="off">
             <p class="error-msg"></p>
         </div>
         <div class="form-group form-group-password" style="display: none">
             <label for="user_pass">Password</label>
-            <input type="password" name="pwd" id="user_pass" class="input password-input" value="" size="20" />
+            <input type="password" name="pwd" id="user_pass" autocomplete="current-password" class="input password-input" value="" size="20" />
             <p class="error-msg"></p>
         </div>
         <div class="form-group form-group-loginshield" style="display: none">
@@ -75,5 +76,6 @@
             <button type="button" class="button button-primary" id="btnNext">Next</button>
             <button type="button" class="button button-primary" id="btnLogin" style="display:none;">Log In</button>
         </div>
+        </form>
     </div>
 </div>

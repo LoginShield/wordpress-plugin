@@ -4,12 +4,31 @@
 class Webauthz
 {
 
+	/**
+	 * The client name to report to the authorization server
+	 *
+	 * @since    1.0.0
+	 * @access   private
+	 * @var      string    $client_name    The client name
+	 */
+	private $client_name;
+
+	/**
+	 * The client version to report to the authorization server
+	 *
+	 * @since    1.0.0
+	 * @access   private
+	 * @var      string    $client_version    The client version
+	 */
+	private $client_version;
+
     /**
      * Create a new Webauthz Instance
      */
     public function __construct()
     {
-        //
+		$this->client_name = "LoginShield for WordPress";
+		$this->client_version = LOGINSHIELD_VERSION;
     }
 
     /**
@@ -50,14 +69,18 @@ class Webauthz
         try {
             $client_token = get_option( 'loginshield_client_token' );
 
+            $requestInfo = array(
+                'grant_token' => $grantToken
+            );
+
             $args = array(
                 'headers' => array(
                     'Authorization' => 'Bearer ' . $client_token,
                     'Content-Type'  => 'application/json',
                 ),
                 'method'    => 'POST',
-                'body'      => '{"grant_token": "' . $grantToken . '"}',
-                'sslverify' => false,
+                'body'      => json_encode($requestInfo),
+                'sslverify' => true,
             );
 
             $webauthz_exchange_uri = get_option( 'loginshield_webauthz_exchange_uri' );
@@ -89,22 +112,32 @@ class Webauthz
     /**
      * Fetch WebAuth Header
      *
-     * @return false|string
+     * @return string value of WWW-Authenticate header (may be empty if header was not found)
      */
     private function fetchWebAuth()
     {
-        $url = 'https://loginshield.com/service/account/realm?uri=' . get_site_url();
+        $url = 'https://loginshield.com/service/account/realm';
+        $url = add_query_arg( 'uri', get_site_url(), $url );
+        
         $response = wp_remote_get($url);
         $wwwAuthenticate = wp_remote_retrieve_header( $response, 'WWW-Authenticate' );
+        
+        $csv = '';
+        if ($this->startsWith(strtolower($wwwAuthenticate), 'webauthz ')) {
+            $csv = substr($wwwAuthenticate, strlen('webauthz '));
+        } elseif ($this->startsWith(strtolower($wwwAuthenticate), 'bearer ')) {
+            $csv = substr($wwwAuthenticate, strlen('bearer '));
+        } else {
+            return $wwwAuthenticate;
+        }
 
-        $wwwAuthenticate = substr($wwwAuthenticate, 7);
         $realmInfo = array();
 
-        $wwwAuthenticateInfo = explode(', ', $wwwAuthenticate);
+        $wwwAuthenticateInfo = explode(', ', $csv);
         foreach($wwwAuthenticateInfo as $info) {
-            $line = explode('=', $info);
-            $key = $line[0];
-            $value = urldecode($line[1]);
+            $kvpair = explode('=', $info);
+            $key = $kvpair[0];
+            $value = urldecode($kvpair[1]);
             $realmInfo[$key] = $value;
         }
 
@@ -156,8 +189,14 @@ class Webauthz
     private function registerClient()
     {
         $client_name = get_bloginfo('name');
-        $client_version = "LoginShield for WordPress v1.0.0";
+        $client_version = $this->client_name . " v" . $this->client_version;
         $grant_redirect_uri = admin_url( '/options-general.php?page=loginshield' );
+
+        $requestInfo = array(
+            'client_name' => $client_name,
+            'client_version' => $client_version,
+            'grant_redirect_uri' => $grant_redirect_uri
+        );
 
         // Register client
         $args = array(
@@ -165,24 +204,24 @@ class Webauthz
                 'Content-Type'  => 'application/json',
             ),
             'method'    => 'POST',
-            'body'      => '{"client_name": "' . $client_name . '", "client_version": "' . $client_version . '", "grant_redirect_uri": "' . $grant_redirect_uri . '"}',
-            'sslverify' => false,
+            'body'      => json_encode($requestInfo),
+            'sslverify' => true,
         );
 
         $webauthz_register_uri = get_option( 'loginshield_webauthz_register_uri' );
 
         $response = wp_remote_post( $webauthz_register_uri , $args );
-        $client = wp_remote_retrieve_body($response);
+        $clientInfoJson = wp_remote_retrieve_body($response);
 
-        $client = json_decode($client);
+        $clientInfo = json_decode($clientInfoJson);
 
-        $client_id = $client->client_id;
-        $client_token = $client->client_token;
+        $client_id = $clientInfo->client_id;
+        $client_token = $clientInfo->client_token;
 
         update_option( 'loginshield_client_id', $client_id );
         update_option( 'loginshield_client_token', $client_token );
 
-        return $client;
+        return $clientInfo;
     }
 
     /**
@@ -201,20 +240,26 @@ class Webauthz
         // Store client state
         update_option( 'loginshield_client_state', $client_state );
 
+        $requestInfo = array(
+            'realm' => $realm,
+            'scope' => $scope,
+            'client_state' => $client_state
+        );
+
         $args = array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $client_token,
                 'Content-Type'  => 'application/json',
             ),
             'method'    => 'POST',
-            'body'      => '{"realm":"' . $realm . '", "scope":"' . $scope . '", "client_state": "' . $client_state . '"}',
-            'sslverify' => false,
+            'body'      => json_encode($requestInfo),
+            'sslverify' => true,
         );
         $response = wp_remote_post( $webauthz_request_uri , $args );
-        $redirectObj = wp_remote_retrieve_body($response);
-        $redirectObj = json_decode($redirectObj);
+        $redirectInfoJson = wp_remote_retrieve_body($response);
+        $redirectInfo = json_decode($redirectInfoJson);
 
-        return $redirectObj;
+        return $redirectInfo;
     }
 
     public function exchangeToken($type, $token)
@@ -224,9 +269,13 @@ class Webauthz
             $client_token = get_option( 'loginshield_client_token' );
 
             if ($type === 'grant') {
-                $body = '{"grant_token":"' . $token . '"}';
+                $requestInfo = array(
+                    'grant_token' => $token
+                );
             } else if ($type === 'refresh') {
-                $body = '{"refresh_token":"' . $token . '"}';
+                $requestInfo = array(
+                    'refresh_token' => $token
+                );
             } else {
                 return null;
             }
@@ -237,16 +286,16 @@ class Webauthz
                     'Content-Type'  => 'application/json',
                 ),
                 'method'    => 'POST',
-                'body'      => $body,
-                'sslverify' => false,
+                'body'      => json_encode($requestInfo),
+                'sslverify' => true,
             );
             $response = wp_remote_post( $webauthz_exchange_uri , $args );
-            $tokenObj = wp_remote_retrieve_body($response);
-            $tokenObj = json_decode($tokenObj);
+            $tokenInfoJson = wp_remote_retrieve_body($response);
+            $tokenInfo = json_decode($tokenInfoJson);
 
             return (object) array(
                 'status'    => 'success',
-                'payload'   => $tokenObj,
+                'payload'   => $tokenInfo,
             );
         } catch (\Exception $exception) {
             return (object) array(
@@ -271,20 +320,20 @@ class Webauthz
                     'Content-Type'  => 'application/json',
                 ),
                 'method'    => 'GET',
-                'sslverify' => false,
+                'sslverify' => true,
             );
             $response = wp_remote_get( $uri , $args );
 
-            $realmObj = wp_remote_retrieve_body($response);
-            $realmObj = json_decode($realmObj);
+            $realmInfoJson = wp_remote_retrieve_body($response);
+            $realmInfo = json_decode($realmInfoJson);
 
-            if ($realmObj->id) {
-                update_option( 'loginshield_realm_id', $realmObj->id );
+            if ($realmInfo->id) {
+                update_option( 'loginshield_realm_id', $realmInfo->id );
             }
 
             return (object) array(
                 'status'    => 'success',
-                'payload'   => $realmObj,
+                'payload'   => $realmInfo,
             );
         } catch (\Exception $exception) {
             return (object) array(
@@ -307,4 +356,17 @@ class Webauthz
         }
         return $randomString;
     }
+    
+    /**
+     * A utility to check if a string starts with a sub string or not
+     *
+     * @param string $haystack     Resource String
+     * @param string $needle       Target Sub String
+     *
+     * @return mixed
+     */
+    private function startsWith( $haystack, $needle ) {
+        $length = strlen( $needle );
+        return substr( $haystack, 0, $length ) === $needle;
+    }    
 }

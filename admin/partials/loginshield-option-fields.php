@@ -12,7 +12,7 @@
  */
 if(!function_exists('loginshield_option_fields')){
    function loginshield_option_fields(){
-   		$args = array('loginshield_realm_id', 'loginshield_authorization_token');
+   		$args = array('loginshield_realm_id', 'loginshield_authorization_token', 'loginshield_client_id');
    		return $args;
    }
 }

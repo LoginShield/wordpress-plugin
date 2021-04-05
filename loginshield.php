@@ -11,15 +11,18 @@
  * @link              https://loginshield.com/
  * @since             1.0.0
  * @package           LoginShield
+ * @author            Luka Modric <lukamodric.world@gmail.com>
+ * @copyright         2021 Cryptium Corporation
+ * @license           http://www.gnu.org/licenses/gpl-2.0.txt
  *
  * @wordpress-plugin
  * Plugin Name:       LoginShield
  * Plugin URI:        https://loginshield.com/
- * Description:       This plugin is created to implement LoginShield functionality in WordPress.
- * Version:           1.0.5
- * Author:            Luka Modric
+ * Description:       LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
+ * Version:           1.0.6
+ * Author:            Cryptium
  * Author URI:        https://loginshield.com/
- * License:           GPL-2.0+
+ * License:           GPL-2.0
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       loginshield
  * Domain Path:       /languages
@@ -35,7 +38,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'LOGINSHIELD_VERSION', '1.0.5' );
+define( 'LOGINSHIELD_VERSION', '1.0.6' );
 
 /**
  * The code that runs during plugin activation.

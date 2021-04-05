@@ -63,8 +63,6 @@ class LoginShield_Public {
 	public function enqueue_styles() {
 
 		/**
-		 * This function is provided for demonstration purposes only.
-		 *
 		 * An instance of this class should be passed to the run() function
 		 * defined in LoginShield_Loader as all of the hooks are defined
 		 * in that particular class.
@@ -87,8 +85,6 @@ class LoginShield_Public {
 	public function enqueue_scripts() {
 
 		/**
-		 * This function is provided for demonstration purposes only.
-		 *
 		 * An instance of this class should be passed to the run() function
 		 * defined in LoginShield_Loader as all of the hooks are defined
 		 * in that particular class.
@@ -118,8 +114,9 @@ class LoginShield_Public {
     public function redirect_to_custom_login() {
         if ( $_SERVER['REQUEST_METHOD'] == 'GET' ) {
             $redirect_to = isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : null;
+            $reauth = isset( $_REQUEST['reauth'] ) ? boolval($_REQUEST['reauth']) : false;
 
-            if ( is_user_logged_in() ) {
+            if ( is_user_logged_in() && !$reauth ) {
                 $this->redirect_logged_in_user( $redirect_to );
                 exit;
             }
@@ -130,9 +127,25 @@ class LoginShield_Public {
             if ( ! empty( $redirect_to ) ) {
                 $login_url = add_query_arg( 'redirect_to', $redirect_to, $login_url );
             }
+            $login_url = add_query_arg( 't', time(), $login_url );
 
             wp_redirect( $login_url );
             exit;
         }
     }
+
+    private function redirect_logged_in_user( $redirect_to = null ) {
+	    $user = wp_get_current_user();
+        if ($redirect_to) {
+            $redirect_to = add_query_arg( 't', time(), $redirect_to );
+            wp_safe_redirect($redirect_to);
+        } else {
+            if (user_can($user, 'manage_options')) {
+                wp_redirect(admin_url());
+            } else {
+                wp_redirect(get_dashboard_url());
+            }
+        }
+    }
+
 }

@@ -177,7 +177,8 @@ class LoginShield {
         /**
         * Create a new Table
         */
-        $this->loader->add_action( 'show_user_profile', $plugin_admin, 'crf_show_extra_profile_fields' );
+        $this->loader->add_action( 'show_user_profile', $plugin_admin, 'loginshield_show_user_profile' );
+        $this->loader->add_action( 'edit_user_profile', $plugin_admin, 'loginshield_edit_user_profile' );        
 	}
 
 	/**
@@ -277,8 +278,9 @@ class LoginShield {
     public function redirect_to_custom_login() {
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             $redirect_to = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
+            $reauth = isset( $_REQUEST['reauth'] ) ? boolval($_REQUEST['reauth']) : false;
 
-            if (is_user_logged_in()) {
+            if (is_user_logged_in() && !$reauth) {
                 $this->redirect_logged_in_user($redirect_to);
                 exit;
             }
@@ -287,6 +289,7 @@ class LoginShield {
             if (!empty($redirect_to)) {
                 $login_url = add_query_arg('redirect_to', $redirect_to, $login_url);
             }
+            $login_url = add_query_arg( 't', time(), $login_url );
 
             wp_redirect($login_url);
             exit;
@@ -295,14 +298,15 @@ class LoginShield {
 
     private function redirect_logged_in_user( $redirect_to = null ) {
 	    $user = wp_get_current_user();
-	    if (user_can($user, 'manage_options')) {
-	        if ($redirect_to) {
-	            wp_safe_redirect($redirect_to);
-            } else {
-	            wp_redirect(admin_url());
-            }
+        if ($redirect_to) {
+            $redirect_to = add_query_arg( 't', time(), $redirect_to );
+            wp_safe_redirect($redirect_to);
         } else {
-
+            if (user_can($user, 'manage_options')) {
+                wp_redirect(admin_url());
+            } else {
+                wp_redirect(get_dashboard_url());
+            }
         }
     }
 }
