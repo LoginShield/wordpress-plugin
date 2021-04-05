@@ -180,14 +180,15 @@ class LoginShield_Admin {
 
         ?>
         <h2>LoginShield Management</h2>
+        <p>Protect your account with LoginShield</p>
 		<table id="LoginShieldForm" class="form-table" <?php if ((!$isRegistered || !$isConfirmed) && isset($mode) && isset($loginshield)): ?>data-mode="<?php echo esc_attr($mode); ?>" data-loginshield="<?php echo esc_attr($loginshield); ?>"<?php endif; ?>>
             <tbody>
                 <tr id="RegisterForm" <?php if ($isRegistered && $isConfirmed): ?>style="display: none;"<?php endif; ?>>
                     <th>
-                        <label><?php esc_html_e('Register LoginShield', 'crf');?></label>
+                        <label><?php esc_html_e('Security', 'crf');?></label>
                     </th>
                     <td>
-                        <button type="button" id="ActivateLoginShield" class="button button-primary"><?php esc_html_e('Register LoginShield', 'crf');?></button>
+                        <button type="button" id="ActivateLoginShield" class="button button-primary"><?php esc_html_e('Activate LoginShield', 'crf');?></button>
                         <div id="loginshield-content"></div>
                     </td>
                 </tr>
