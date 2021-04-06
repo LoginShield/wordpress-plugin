@@ -8,20 +8,21 @@
  * registers the activation and deactivation functions, and defines a function
  * that starts the plugin.
  *
- * @link              https://loginshield.com/
+ * @link              https://loginshield.com
  * @since             1.0.0
  * @package           LoginShield
+ * @author            Jonathan Buhacoff <jonathan@cryptium.com>
  * @author            Luka Modric <lukamodric.world@gmail.com>
  * @copyright         2021 Cryptium Corporation
  * @license           http://www.gnu.org/licenses/gpl-2.0.txt
  *
  * @wordpress-plugin
  * Plugin Name:       LoginShield
- * Plugin URI:        https://loginshield.com/
+ * Plugin URI:        https://loginshield.com
  * Description:       LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
  * Version:           1.0.6
  * Author:            Cryptium
- * Author URI:        https://loginshield.com/
+ * Author URI:        https://cryptium.com
  * License:           GPL-2.0
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       loginshield
