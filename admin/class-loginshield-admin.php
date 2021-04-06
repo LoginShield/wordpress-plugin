@@ -65,6 +65,9 @@ class LoginShield_Admin {
         add_action( 'admin_init', array( $this,'loginshield_include_files' ) );
 		add_action( 'admin_init', array( $this,'loginshield_settings_register' ) );
         add_action( 'admin_init', array( $this,'loginshield_activation_redirect' ) );
+        
+        // Add settings link in plugins page
+        add_filter( 'plugin_action_links_loginshield/loginshield.php', array( $this, 'loginshield_admin_setting_link' ) );
 
         // Add custom template
         add_filter( 'theme_page_templates', array( $this, 'add_new_template' ) );
@@ -160,6 +163,28 @@ class LoginShield_Admin {
          */
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/loginshield-plugin-setting.php';
 
+    }
+    
+    /**
+     * Add a link to plugin settings from the plugin's row in the all plugins admin page.
+     *
+     * @since 1.0.7
+    */
+    public function loginshield_admin_setting_link($links) {
+        // Build and escape the URL.
+        $url = add_query_arg(
+            'page',
+            'loginshield',
+            get_admin_url(get_current_blog_id(), '/options-general.php')
+        );
+        // Create the link.
+        $settings_link = '<a href="' . esc_url($url) . '">' . __( 'Settings' ) . '</a>';
+        // Adds the link to the end of the array.
+        array_push(
+            $links,
+            $settings_link
+        );
+        return $links;
     }
 
     /**
