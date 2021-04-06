@@ -235,7 +235,7 @@ loginShield.AdminForm = (function($) {
       const { isAuthenticated, error, isConfirmed } = await this.loginWithLoginShield({ verifyToken });
       if (isAuthenticated) {
         this.enableActivateForm(isConfirmed);
-        this.showMessage('LoginShield account registration is succeed.', 'success');
+        this.showMessage('LoginShield setup complete', 'success');
       } else if (error) {
         this.resetLoginForm();
         this.showMessage(`finishLoginShield error: ${error}`, 'error');
