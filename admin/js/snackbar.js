@@ -83,6 +83,7 @@
       secondButton.innerHTML = options.secondButtonText;
       secondButton.setAttribute('aria-label', options.secondButtonAria);
       secondButton.style.color = options.secondButtonTextColor;
+      secondButton.style.backgroundColor = options.backgroundColor;
       secondButton.addEventListener('click', function() {
         options.onSecondButtonClick(Snackbar.snackbar);
       });
@@ -95,6 +96,7 @@
       actionButton.innerHTML = options.actionText;
       actionButton.setAttribute('aria-label', options.actionTextAria);
       actionButton.style.color = options.actionTextColor;
+      actionButton.style.backgroundColor = options.backgroundColor;
       actionButton.addEventListener('click', function() {
         options.onActionClick(Snackbar.snackbar);
       });
