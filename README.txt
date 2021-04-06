@@ -104,3 +104,19 @@ The monthly active user pricing makes it possible to provide you with a very pre
 == Managing your LoginShield subscription ==
 
 You can visit [https://loginshield.com](https://loginshield.com) to manage your LoginShield subscription.
+
+== Privacy ==
+The plugin shares the following information with [LoginShield](https://loginshield.com). For more information, see our [Privacy Policy](https://loginshield.com/notice/privacy/).
+
+= Site Name, Site Icon, and Site URL =
+When you activate the plugin, the site name, icon, and URL are sent to LoginShield to register the plugin. This information is later displayed in the LoginShield app during login. If you deactivate or uninstall the plugin, and want to delete this information, you can visit [https://loginshield.com](https://loginshield.com) to delete your LoginShield account where this information is stored.
+
+= User Name and Email =
+When a user activates LoginShield in their profile settings, their name and email address are sent to LoginShield to register the user.
+This information is later used by LoginShield for service-related communication with the user, such as our phishing protection feature. We DO NOT sell or share this information with anyone else, except as required by law. If the user deactivates LoginShield, and wants to delete this information, the user can visit [https://loginshield.com](https://loginshield.com) to delete their LoginShield account.
+
+= Client ID =
+When you activate the plugin, the plugin registers itself with LoginShield and receives a unique client ID. This client ID is then associated with the site name, icon, and URL, and is used to identify the WordPress site to LoginShield in all further backend communication, and is required so that users will be able to continue to log in even when you change the site name.
+
+= Realm-Scoped User ID =
+When a user activates LoginShield in their profile settings, a unique user id is generated and sent to LoginShield to register the user. This user id is NOT the same as the user's WordPress user id, and is required so that a LoginShield user will be able to continue to log in even when they change their email address. If the user deactivates LoginShield, and wants to delete this information, the user can visit [https://loginshield.com](https://loginshield.com) to delete their LoginShield account.
