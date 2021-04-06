@@ -297,8 +297,8 @@ Plugin Setting Tab
 }
 
 #ActionForm .btn-access-request {
-    background-color: black;
-    border: 1px solid #cdcdcd;
+    background-color: #007cba;
+    border: 1px solid #007cba;
     border-radius: 4px;
     padding: 10px 30px;
     line-height: 16px;
