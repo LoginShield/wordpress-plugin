@@ -95,10 +95,6 @@ class LoginShield_RestAPI
         $this->loginshield_realm_id = get_option('loginshield_realm_id');
         $this->loginshield_authorization_token = get_option('loginshield_authorization_token');
 
-        if ( in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1', 'localhost']) ) {
-            $this->endpoint_url = 'https://demo.earlyhq.com';
-        }
-
         add_action('rest_api_init', array($this, 'register_rest_api'));
     }
 
