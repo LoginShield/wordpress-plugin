@@ -123,12 +123,6 @@
     background-color: #0073aa;
     transition: 0.5s;
 }
-img.Loaderimg {
-    position: absolute;
-    width: 15px;
-    right: 10px;
-    top: 10px;
-}
 button.btn.disabled_btn {
     opacity: .5;
     pointer-events: none;
