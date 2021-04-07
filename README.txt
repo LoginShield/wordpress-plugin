@@ -71,6 +71,12 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 
 == Changelog ==
 
+= 1.0.7 =
+* Add: link to plugin settings under the plugin name in all plugins list
+* Fix: site logo missing from login page
+* Fix: redirect from LoginShield safety notice results in 404 Not Found
+* Fix: user login doesn't work after uninstall/reinstall plugin and connect to same authentication realm
+
 = 1.0.6 =
 * Fix: push notifications disabled
 * Improve: always use verifyssl
