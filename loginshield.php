@@ -92,24 +92,3 @@ function run_loginshield() {
 
 }
 run_loginshield();
-
-add_action( 'wp_ajax_loginshield_enterprise_settings', 'loginshield_enterprise_settings' );
-
-function loginshield_enterprise_settings() {
-    $form_data = array();
-    parse_str($_POST['formdata'], $form_data);
-    $form_data = wp_unslash($form_data);
-
-    $realm_id = trim($form_data['$loginshield_realm_id']);
-    $authorization_token = trim($form_data['$loginshield_authorization_token']);
-
-    try {
-        update_option('loginshield_realm_id', $realm_id);
-        update_option('loginshield_authorization_token', $authorization_token);
-        echo json_encode(array('status' => 1,'data'=>'success'));
-    } catch (\Exception $exception) {
-        echo json_encode(array('status' => 0,'data'=>'error'));
-    }
-
-    die;
-}
