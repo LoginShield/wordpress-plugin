@@ -56,7 +56,7 @@
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 
 <div id="LoginShieldLogin">
-    <?php echo get_custom_logo(); ?>
+    <div style="max-width: 300px;"><?php echo get_custom_logo(); ?></div>
     <h1 class="sitename"><a href="<?php echo esc_attr( $login_header_url ); ?>"><?php echo esc_html($login_header_text); ?></a></h1>
     <div id="LoginShieldLoginForm" data-redirect-to="<?php echo esc_attr($redirect_to); ?>" data-mode="<?php echo esc_attr($mode); ?>" data-loginshield="<?php echo esc_attr($loginshield); ?>">
         <form>
