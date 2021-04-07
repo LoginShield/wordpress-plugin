@@ -278,6 +278,9 @@ publicloginshield.LoginForm = (function($) {
 
 		loginWithLoginShield: function(payload) {
       const { login, mode, verifyToken } = payload;
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get('redirect_to'); // may be null
+      
 			return new Promise((resolve, reject) => {
 				const url = loginShieldPublicAjax.api_base + "loginshield/session/login/loginshield";
 				$.ajax({
@@ -290,6 +293,7 @@ publicloginshield.LoginForm = (function($) {
             login    		:  login,
             mode        :  mode,
             verifyToken :  verifyToken,
+            redirectTo: redirectTo,
 					}),
 					beforeSend : function (xhr) {
 						xhr.setRequestHeader('X-WP-Nonce', loginShieldPublicAjax.nonce);

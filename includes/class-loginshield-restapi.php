@@ -498,6 +498,7 @@ class LoginShield_RestAPI
             $login = $request->get_param('login');
             $mode = $request->get_param('mode');
             $verifyToken = $request->get_param('verifyToken');
+            $redirectTo = $request->get_param('redirectTo'); // optional, for normal login only (not for activation)
 
             if ($mode === 'activate-loginshield') {
                 $current_user = wp_get_current_user();
@@ -539,7 +540,7 @@ class LoginShield_RestAPI
                     ], 200);
                 }
                 if ($verifyLoginResponse->realmId == $this->loginshield_realm_id) {
-                    $user_id = $this->getLoginShieldUserId($verifyLoginResponse->realmScopedUserId);
+                    $user_id = $this->findUserIdByLoginShieldUserId($verifyLoginResponse->realmScopedUserId);
                     if ($user_id) {
                         $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
                         if (!$isActivated) {
@@ -575,12 +576,20 @@ class LoginShield_RestAPI
                 }
 
                 $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-                $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_activated', true);
+                $isActivated = get_user_meta($userId, 'loginshield_is_activated', true);
                 $loginshieldUserId = get_user_meta($userId, 'loginshield_user_id', true);
+                
+                $login_page_id = get_option( 'loginshield_login_page' );
+                $login_url = get_permalink( $login_page_id );
+                $login_url = add_query_arg( 'mode', 'resume-loginshield', $login_url );
+                $login_url = add_query_arg( 't', time(), $login_url );
+                if ($redirectTo) {
+                    $login_url = add_query_arg( 'redirect_to', $redirectTo, $login_url );
+                }
 
-                if ($isLoginShieldEnabled && $loginshieldUserId) {
+                if ($isActivated && $loginshieldUserId) {
                     $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
-                    $startLoginResponse = $loginshield->startLogin($loginshieldUserId, $this->endpoint_url . '/loginshield-login?mode=resume-loginshield');
+                    $startLoginResponse = $loginshield->startLogin($loginshieldUserId, $login_url);
                     return new WP_REST_Response([
                         'isAuthenticated'   => false,
                         'forward'           => $startLoginResponse->forward
@@ -723,8 +732,6 @@ class LoginShield_RestAPI
                 $this->setUserMeta($user_id, 'loginshield_is_confirmed', false, true);
                 $this->setUserMeta($user_id, 'loginshield_user_id', $realmScopedUserId, true);
 
-                $this->addNewLoginShieldUser($realmScopedUserId, $user_id);
-
                 if ($response->forward) {
                     return new WP_REST_Response([
                         'forward'   => $response->forward
@@ -833,61 +840,30 @@ class LoginShield_RestAPI
     }
 
     /**
-     * Add new LoginShield User
-     *
-     * @param string $realmScopedUserId
-     * @param string $userId
-     *
-     * @return void
-     */
-    private function addNewLoginShieldUser($realmScopedUserId, $userId)
-    {
-        $userList = get_option('map_loginshielduserid_to_id');
-        $userList = json_decode($userList, true);
-        if (!isset($userList) || !$userList) {
-            $userList = [];
-        }
-
-        $userList[$realmScopedUserId] = $userId;
-        update_option('map_loginshielduserid_to_id', json_encode($userList));
-    }
-
-    /**
-     * Get LoginShield UserId (WordPress User Id)
+     * Find a WordPress user id for the specified LoginShield realm-scoped user id
      *
      * @param string $realmScopedUserId
      *
      * @return string
      */
-    private function getLoginShieldUserId($realmScopedUserId)
+    private function findUserIdByLoginShieldUserId($realmScopedUserId)
     {
-        $userList = get_option('map_loginshielduserid_to_id');
-        $userList = json_decode($userList, true);
-        if (!isset($userList) || !$userList) {
-            $userList = [];
+        
+        $args  = array(
+            'meta_key' => 'loginshield_user_id',
+            'meta_value' => $realmScopedUserId,
+            'meta_compare' => '=' // exact match only
+        );
+        
+        $query = new WP_User_Query( $args );
+        
+        $users = $query->get_results();
+        
+        if (isset($users) && count($users) == 1) {
+            return $users[0]->ID;
         }
 
-        if (!$userList[$realmScopedUserId]) {
-            return null;
-        }
-
-        return $userList[$realmScopedUserId];
-    }
-
-    /**
-     * Get LoginShield UserId (WordPress User Id)
-     *
-     * @return array
-     */
-    private function getLoginShieldUsers()
-    {
-        $userList = get_option('map_loginshielduserid_to_id');
-        $userList = json_decode($userList, true);
-        if (!isset($userList) || !$userList) {
-            $userList = [];
-        }
-
-        return $userList;
+        return null;
     }
 
     /**

@@ -39,7 +39,6 @@ delete_option('loginshield_access_token_max_seconds');
 delete_option('loginshield_refresh_token');
 delete_option('loginshield_refresh_token_max_seconds');
 delete_option('loginshield_authorization_token');
-delete_option('map_loginshielduserid_to_id');
 delete_option('loginshield_realm');
 delete_option('loginshield_scope');
 delete_option('loginshield_path');

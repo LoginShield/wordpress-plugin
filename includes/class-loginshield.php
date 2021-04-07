@@ -111,6 +111,11 @@ class LoginShield {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-i18n.php';
 
+        /**
+         * The class responsible for defining all Rest APIs
+         */
+        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-restapi.php';
+
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
@@ -127,12 +132,6 @@ class LoginShield {
          */
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/RealmClient.php';
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/Webauthz.php';
-
-        /**
-         * The class responsible for defining all Rest APIs
-         */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-restapi.php';
-
 
 		$this->loader = new LoginShield_Loader();
 

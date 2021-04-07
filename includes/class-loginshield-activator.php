@@ -35,7 +35,7 @@ class LoginShield_Activator {
          *
          * @since    1.0.3
          */
-        $loginPage = get_page_by_title('LoginShield Login', 'OBJECT', 'page');
+        $loginPage = get_page_by_title('LoginShield', 'OBJECT', 'page');
         $page_id = '';
         if(empty($loginPage)) {
             $page_id = wp_insert_post(
