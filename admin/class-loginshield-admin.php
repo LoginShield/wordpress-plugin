@@ -210,25 +210,25 @@ class LoginShield_Admin {
             <tbody>
                 <tr id="RegisterForm" <?php if ($isRegistered && $isConfirmed): ?>style="display: none;"<?php endif; ?>>
                     <th>
-                        <label><?php esc_html_e('Security', 'crf');?></label>
+                        <label><?php esc_html_e('Security', 'loginshield');?></label>
                     </th>
                     <td>
-                        <button type="button" id="ActivateLoginShield" class="button button-primary"><?php esc_html_e('Activate LoginShield', 'crf');?></button>
+                        <button type="button" id="ActivateLoginShield" class="button button-primary"><?php esc_html_e('Activate LoginShield', 'loginshield');?></button>
                         <div id="loginshield-content"></div>
                     </td>
                 </tr>
                 <tr id="ActivateForm" <?php if (!$isRegistered || !$isConfirmed): ?>style="display: none;"<?php endif; ?>>
                     <th>
-                        <label><?php esc_html_e('Security', 'crf');?></label>
+                        <label><?php esc_html_e('Security', 'loginshield');?></label>
                     </th>
                     <td>
                         <input type="checkbox" id="loginshield_active" name="loginshield_active" <?php if ($isActivated): ?>checked<?php endif; ?>>
-                        <label for="loginshield_active"><?php esc_html_e('Protect this account with LoginShield', 'crf');?></label>
+                        <label for="loginshield_active"><?php esc_html_e('Protect this account with LoginShield', 'loginshield');?></label>
                     </td>
                 </tr>
                 <tr>
                     <th>
-                        <label><?php esc_html_e('Learn More', 'crf');?></label>
+                        <label><?php esc_html_e('Learn More', 'loginshield');?></label>
                     </th>
                     <td>
                         <a href="https://loginshield.com/article/one-tap-login/" target="_blank">https://loginshield.com/article/one-tap-login/</a>
@@ -236,7 +236,7 @@ class LoginShield_Admin {
                 </tr>
                 <tr>
                     <th>
-                        <label><?php esc_html_e('Get the free app', 'crf');?></label>
+                        <label><?php esc_html_e('Get the free app', 'loginshield');?></label>
                     </th>
                     <td>
                         <a href="https://loginshield.com/software/" target="_blank">https://loginshield.com/software/</a>
@@ -245,11 +245,11 @@ class LoginShield_Admin {
                 <?php if(current_user_can('edit_users') && ($isRegistered || $isConfirmed || $isActivated || $loginshield_user_id)): ?>
                 <tr>
                     <th>
-                        <label><?php esc_html_e('Reset LoginShield', 'crf');?></label>
+                        <label><?php esc_html_e('Reset LoginShield', 'loginshield');?></label>
                     </th>
                     <td>
-                        <button type="button" id="ResetLoginShield" data-user-id="<?php echo esc_attr($user_id); ?>" class="button button-primary"><?php esc_html_e('Reset LoginShield', 'crf');?></button>
-                        <p><?php esc_html_e('Reset will deactivate LoginShield for the user and delete the registration. The user will need to register again from their profile page.', 'crf');?></p>
+                        <button type="button" id="ResetLoginShield" data-user-id="<?php echo esc_attr($user_id); ?>" class="button button-primary"><?php esc_html_e('Reset LoginShield', 'loginshield');?></button>
+                        <p><?php esc_html_e('Reset will deactivate LoginShield for the user and delete the registration. The user will need to register again from their profile page.', 'loginshield');?></p>
                     </td>
                 </tr>
                 <?php endif; ?>
@@ -275,36 +275,36 @@ class LoginShield_Admin {
             <tbody>
                 <tr>
                     <th>
-                        <?php esc_html_e('Registered', 'crf');?>
+                        <?php esc_html_e('Registered', 'loginshield');?>
                     </th>
                     <td>
                         <?php if($isRegistered && $loginshield_user_id): ?>
-                        <?php esc_html_e('Yes', 'crf');?> (LoginShield realm-scoped user id: <?php echo esc_html($loginshield_user_id); ?>)
+                        <?php esc_html_e('Yes', 'loginshield');?> (LoginShield realm-scoped user id: <?php echo esc_html($loginshield_user_id); ?>)
                         <?php else: ?>
-                        <?php esc_html_e('No', 'crf');?>
+                        <?php esc_html_e('No', 'loginshield');?>
                         <?php endif; ?>
                     </td>
                 </tr>
                 <tr>
                     <th>
-                        <?php esc_html_e('Enabled', 'crf');?>
+                        <?php esc_html_e('Enabled', 'loginshield');?>
                     </th>
                     <td>
                         <?php if($isActivated && isConfirmed): ?>
-                        <?php esc_html_e('Yes', 'crf');?>
+                        <?php esc_html_e('Yes', 'loginshield');?>
                         <?php else: ?>
-                        <?php esc_html_e('No', 'crf');?>
+                        <?php esc_html_e('No', 'loginshield');?>
                         <?php endif; ?>
                     </td>
                 </tr>
                 <?php if($isRegistered || $isConfirmed || $isActivated || $loginshield_user_id): ?>
                 <tr>
                     <th>
-                        <label><?php esc_html_e('Reset LoginShield', 'crf');?></label>
+                        <label><?php esc_html_e('Reset LoginShield', 'loginshield');?></label>
                     </th>
                     <td>
-                        <button type="button" id="ResetLoginShield" data-user-id="<?php echo esc_attr($user_id); ?>" class="button button-primary"><?php esc_html_e('Reset LoginShield', 'crf');?></button>
-                        <p><?php esc_html_e('Reset will deactivate LoginShield for the user and delete the registration. The user will need to register again from their profile page.', 'crf');?></p>
+                        <button type="button" id="ResetLoginShield" data-user-id="<?php echo esc_attr($user_id); ?>" class="button button-primary"><?php esc_html_e('Reset LoginShield', 'loginshield');?></button>
+                        <p><?php esc_html_e('Reset will deactivate LoginShield for the user and delete the registration. The user will need to register again from their profile page.', 'loginshield');?></p>
                     </td>
                 </tr>
                 <?php endif; ?>
