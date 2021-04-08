@@ -49,12 +49,6 @@ function activate_loginshield() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-loginshield-activator.php';
 	LoginShield_Activator::activate();
 
-    // Don't do redirects when multiple plugins are bulk activated
-    if (
-        ( isset( $_REQUEST['action'] ) && 'activate-selected' === $_REQUEST['action'] ) &&
-        ( isset( $_POST['checked'] ) && count( $_POST['checked'] ) > 1 ) ) {
-        return;
-    }
     add_option( 'loginshield_activation_redirect', wp_get_current_user()->ID );
 }
 

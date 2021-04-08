@@ -423,12 +423,19 @@ class LoginShield_Admin {
 
 
     /**
-     * Redirects the user after plugin activation.
+     * Redirects the user after plugin activation. The redirect happens only under the
+     * following conditions:
+     *
+     * 1. the plugin was recently activated
+     * 2. the current admin user is the one who activated the plugin (we don't redirect someone else)
+     * 3. the plugin was activated alone (not as part of a bulk activation of multiple plugins)
      *
      * @since 1.0.4
      */
     public function loginshield_activation_redirect() {
-        if ( intval( get_option( 'loginshield_activation_redirect', false ) ) === wp_get_current_user()->ID ) {
+        // only redirect to settings if the plugin was recently activated by THIS admin user,
+        // so we don't affect any other admins who may be visiting the plugins page at the same time,
+        if ( intval( get_option( 'loginshield_activation_redirect', false ) ) === wp_get_current_user()->ID && !isset($_GET['activate-multi']) ) {
             delete_option( 'loginshield_activation_redirect' );
             wp_safe_redirect( admin_url( '/options-general.php?page=loginshield' ) );
             exit;
