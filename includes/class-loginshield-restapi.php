@@ -717,6 +717,11 @@ class LoginShield_RestAPI
 
             $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
             $realmScopedUserId = $this->generateRandomId(16);
+            
+            // make sure no other user is already assigned the same realm scoped user id
+            while ( !is_null( $this->findUserIdByLoginShieldUserId($realmScopedUserId) ) ) {
+                $realmScopedUserId = $this->generateRandomId(16);
+            }
 
             $response = $loginshield->createRealmUser($realmScopedUserId, $user_name, $user_email, true);
             if ($response->error) {
