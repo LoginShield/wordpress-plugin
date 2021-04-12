@@ -48,7 +48,7 @@ loginShield.AdminForm = (function($) {
 
     handleSecurityChange: async function(e) {
       const action = 'update-security';
-      const isActive = e.target.checked;
+      const isActive = e.target.checked ? true : false;
 
       const response = await this.updateSecurity({ action, isActive });
 
@@ -388,6 +388,7 @@ loginShield.SettingsForm = (function($) {
     form: '#LoginShieldSettingsForm',
     actionForm: '#ActionForm',
     btnAccessRequest: '#btnAccessRequest',
+    realmIdText: '#loginshield_realm_id'
   };
 
   function SettingsForm() {
@@ -397,12 +398,14 @@ loginShield.SettingsForm = (function($) {
     this.$form = $(selectors.form);
     this.$actionForm = $(selectors.actionForm);
     this.$btnAccessRequest = $(selectors.btnAccessRequest);
+    this.$realmIdText = $(selectors.realmIdText);
+    
+    const query = new URLSearchParams(window.location.search);
+    this.clientId = query.get('client_id');
+    this.clientState = query.get('client_state');
+    this.grantToken = query.get('grant_token');
 
-    this.clientId = this.$form.data('client-id');
-    this.clientState = this.$form.data('client-state');
-    this.grantToken = this.$form.data('grant-token');
-
-    this.$btnAccessRequest.on('click', this.requestToken.bind(this));
+    this.$btnAccessRequest.on('click', this.startWebauthzAccessRequest.bind(this));
 
     this.init();
   }
@@ -412,7 +415,7 @@ loginShield.SettingsForm = (function($) {
        if (this.onTokenExchange()) {
          this.exchangeToken();
        } else {
-         this.verifyToken();
+         this.checkRealmStatus();
        }
     },
     
@@ -431,7 +434,7 @@ loginShield.SettingsForm = (function($) {
 
     exchangeToken: async function() {
       try {
-        const response = await this.handleExchangeToken();
+        const response = await this.handleWebauthzExchangeToken();
         if (!response) {
           this.showAccessRequestForm();
           this.showMessage('No response from server', 'error');
@@ -443,7 +446,7 @@ loginShield.SettingsForm = (function($) {
           return;
         }
 
-        if (response.access_token) {
+        if (response.status === 'success') {
           this.showNormalForm();
           this.showMessage('You have activated your account successfully.');
           // replace the location to remove the query parameters and load the realm id now that it's available
@@ -452,7 +455,10 @@ loginShield.SettingsForm = (function($) {
           searchParams.delete("client_state");
           searchParams.delete("grant_token");
           const newURL = new URL(window.location.protocol + "//" + window.location.host + window.location.pathname + "?" + searchParams.toString() );
-          window.location.replace(newURL.toString());
+          // remove the query parameters from browser history, without reloading the page
+          window.history.replaceState(null, null, newURL.toString());
+          // load the realm info
+          this.checkRealmStatus();
         }
       } catch (e) {
         this.showAccessRequestForm();
@@ -460,10 +466,10 @@ loginShield.SettingsForm = (function($) {
       }
     },
 
-    requestToken: async function() {
+    startWebauthzAccessRequest: async function() {
       this.$btnAccessRequest.addClass('loading');
 
-      const response = await this.handleRequestToken();
+      const response = await this.handleWebauthzStartAccessRequest();
       const { payload, error, message } = response;
 
       if (payload && payload.redirect) {
@@ -477,26 +483,27 @@ loginShield.SettingsForm = (function($) {
       this.$btnAccessRequest.removeClass('loading');
     },
 
-    verifyToken: async function() {
-      const response = await this.handleVerifyToken();
+    checkRealmStatus: async function() {
+      const response = await this.handleCheckRealmStatus();
 
-      const { status, error, message } = response;
+      const { status, error, message, realmId } = response;
 
       if (status === 'success') {
-        this.showNormalForm();
         console.info(message);
+        this.showNormalForm();
+        this.$realmIdText.text(realmId);
         return;
       }
 
       if (error) {
-        this.showAccessRequestForm();
         console.info(message);
+        this.showAccessRequestForm();
       }
     },
 
-    handleExchangeToken: function() {
+    handleWebauthzExchangeToken: function() {
       return new Promise((resolve, reject) => {
-        const url = loginshieldSettingAjax.api_base + "loginshield/token/exchange";
+        const url = loginshieldSettingAjax.api_base + "loginshield/webauthz/exchange";
         $.ajax({
           url        : url,
           method     : 'POST',
@@ -520,9 +527,9 @@ loginShield.SettingsForm = (function($) {
       });
     },
 
-    handleRequestToken: function() {
+    handleWebauthzStartAccessRequest: function() {
       return new Promise((resolve, reject) => {
-        const url = loginshieldSettingAjax.api_base + "loginshield/token/request";
+        const url = loginshieldSettingAjax.api_base + "loginshield/webauthz/start";
         $.ajax({
           url        : url,
           method     : 'POST',
@@ -541,9 +548,9 @@ loginShield.SettingsForm = (function($) {
       });
     },
 
-    handleVerifyToken: function() {
+    handleCheckRealmStatus: function() {
       return new Promise((resolve, reject) => {
-        const url = loginshieldSettingAjax.api_base + "loginshield/token/verify";
+        const url = loginshieldSettingAjax.api_base + "loginshield/realm/status";
         $.ajax({
           url        : url,
           method     : 'POST',

@@ -23,13 +23,22 @@
 class LoginShield_Admin {
 
 	/**
-	 * The ID of this plugin.
+	 * The unique ID of this plugin.
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
+	 * @var      string    $plugin_name    The unique ID of this plugin.
 	 */
 	private $plugin_name;
+
+	/**
+	 * The display name of this plugin.
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $plugin_display_name    The display name of this plugin.
+	 */
+	private $plugin_display_name;
 
 	/**
 	 * The version of this plugin.
@@ -52,17 +61,18 @@ class LoginShield_Admin {
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of this plugin.
+	 * @param      string    $plugin_name       The unique name of this plugin.
 	 * @param      string    $version    The version of this plugin.
+     * @param      string    $plugin_display_name       The display name of this plugin.
 	 */
-    public function __construct( $plugin_name, $version ) {
+    public function __construct( $plugin_name, $version, $plugin_display_name ) {
 
 		$this->plugin_name = $plugin_name;
+		$this->plugin_display_name = $plugin_display_name;
 		$this->version = $version;
         $this->templates = array();
 
         // Initialize settings
-        add_action( 'admin_init', array( $this,'loginshield_include_files' ) );
 		add_action( 'admin_init', array( $this,'loginshield_settings_register' ) );
         add_action( 'admin_init', array( $this,'loginshield_activation_redirect' ) );
         
@@ -132,18 +142,6 @@ class LoginShield_Admin {
             'nonce'     => wp_create_nonce( 'wp_rest' )
         ));
 	}
-    /**
-     * Inculdes files in plugin .
-     *
-     * @since    1.0.0
-     */
-    public function loginshield_include_files() {
-
-        /**
-         * Inculde admin section files
-         */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/loginshield-option-fields.php';
-    }
 
     public function loginshield_admin_menu(){
         // add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
@@ -174,8 +172,8 @@ class LoginShield_Admin {
         // Build and escape the URL.
         $url = add_query_arg(
             'page',
-            'loginshield',
-            get_admin_url(get_current_blog_id(), '/options-general.php')
+            $this->plugin_name,
+            admin_url('/options-general.php')
         );
         // Create the link.
         $settings_link = '<a href="' . esc_url($url) . '">' . __( 'Settings' ) . '</a>';
@@ -195,13 +193,13 @@ class LoginShield_Admin {
     public function loginshield_show_user_profile($user) {
         $current_user = wp_get_current_user();
         $user_id = $current_user->ID;
-        $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
-        $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
-        $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
-        $loginshield_user_id = get_user_meta($user_id, 'loginshield_user_id', true);
+        $isRegistered = $this->get_boolean_user_meta($user_id, 'loginshield_is_registered');
+        $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
+        $isConfirmed = $this->get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
+        $loginshield_user_id = $this->get_string_user_meta($user_id, 'loginshield_user_id');
 
-        $mode = $variable = $_GET['mode'];
-        $loginshield = $variable = $_GET['loginshield'];
+        $mode = isset($_GET['mode']) ? sanitize_key($_GET['mode']) : '';
+        $loginshield = isset($_GET['loginshield']) && wp_validate_http_url($_GET['loginshield']) ? $_GET['loginshield'] : '';
 
         ?>
         <h2>LoginShield Management</h2>
@@ -265,10 +263,10 @@ class LoginShield_Admin {
      */
     public function loginshield_edit_user_profile($user) {
         $user_id = $user->ID;
-        $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
-        $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
-        $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
-        $loginshield_user_id = get_user_meta($user_id, 'loginshield_user_id', true);
+        $isRegistered = $this->get_boolean_user_meta($user_id, 'loginshield_is_registered');
+        $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
+        $isConfirmed = $this->get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
+        $loginshield_user_id = $this->get_string_user_meta($user_id, 'loginshield_user_id');
         ?>
         <h2>LoginShield Management</h2>
 		<table id="LoginShieldForm" class="form-table">
@@ -313,25 +311,6 @@ class LoginShield_Admin {
         <?php
     }
 
-    /**
-     * Register loginshield settings options.
-     *
-     * @since    1.0.0
-     */
-    public function loginshield_settings_register() {
-        /**
-         * Get loginshield option fields
-         */
-        $args = '';
-        if(function_exists('loginshield_option_fields')){
-            $args = loginshield_option_fields();
-        }
-        if(!empty($args)) :
-            foreach($args as $key => $val) :
-                register_setting( 'loginshield-settings', $val );
-            endforeach;
-        endif;
-    }
 
     /**
      * Add LoginShield template to the page dropdown (v4.7+)
@@ -434,11 +413,34 @@ class LoginShield_Admin {
      */
     public function loginshield_activation_redirect() {
         $activationUserId = get_option( 'loginshield_activation_redirect', false );
-        
-        if ( is_numeric($activationUserId) && intval( $activationUserId ) === wp_get_current_user()->ID && !isset($_GET['activate-multi']) ) {
+        $isMultiPluginActivation = isset($_GET['activate-multi']) && filter_var($_GET['activate-multi'], FILTER_VALIDATE_BOOLEAN );
+        if ( is_numeric($activationUserId) && intval( $activationUserId ) === wp_get_current_user()->ID && !$isMultiPluginActivation ) {
             delete_option( 'loginshield_activation_redirect' );
-            wp_safe_redirect( admin_url( '/options-general.php?page=loginshield' ) );
+            $url = add_query_arg(
+                'page',
+                $this->plugin_name,
+                admin_url('/options-general.php')
+            );
+            wp_safe_redirect( $url );
             exit;
         }
     }
+    
+    /**
+     * Retrieves the user meta key as a boolean; if it has a string value such as
+     * 'true' or 'false', it is converted to a boolean value for the result.
+     */
+    private function get_boolean_user_meta($user_id, $key) {
+        $value = get_user_meta($user_id, $key, true);
+        return isset($value) && is_string($value) && filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+    
+    /**
+     * Retrieves the user meta key as a string
+     */
+    private function get_string_user_meta($user_id, $key) {
+        $value = get_user_meta($user_id, $key, true);
+        return isset($value) && is_string($value) ? $value : '';
+    }
+    
 }

@@ -32,13 +32,11 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 delete_option('loginshield_activation_redirect');
 delete_option('loginshield_realm_id');
-delete_option('loginshield_authorization_token');
 delete_option('loginshield_login_page');
 delete_option('loginshield_access_token');
-delete_option('loginshield_access_token_max_seconds');
+delete_option('loginshield_access_token_not_after');
 delete_option('loginshield_refresh_token');
-delete_option('loginshield_refresh_token_max_seconds');
-delete_option('loginshield_authorization_token');
+delete_option('loginshield_refresh_token_not_after');
 delete_option('loginshield_realm');
 delete_option('loginshield_scope');
 delete_option('loginshield_path');
@@ -49,3 +47,11 @@ delete_option('loginshield_webauthz_exchange_uri');
 delete_option('loginshield_client_id');
 delete_option('loginshield_client_token');
 delete_option('loginshield_client_state');
+
+// obsolete settings, last used in v1.0.7
+delete_option('loginshield_authorization_token');
+delete_option('loginshield_access_token_max_seconds');
+delete_option('loginshield_refresh_token_max_seconds');
+unregister_setting( 'loginshield-settings', 'loginshield_client_id' );
+unregister_setting( 'loginshield-settings', 'loginshield_realm_id' );
+unregister_setting( 'loginshield-settings', 'loginshield_authorization_token' );

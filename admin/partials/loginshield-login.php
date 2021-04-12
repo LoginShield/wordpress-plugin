@@ -47,10 +47,9 @@
 
     $login_header_text = empty( $login_header_title ) ? get_bloginfo('name') : $login_header_title;
 
-    $redirect_to = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : get_home_url();
-    $mode = $variable = $_GET['mode'];
-    $loginshield = $variable = $_GET['loginshield'];
-
+    $redirect_to = isset($_REQUEST['redirect_to']) && wp_validate_redirect($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : get_home_url();
+    $mode = isset($_GET['mode']) ? sanitize_key($_GET['mode']) : '';
+    $loginshield = isset($_GET['loginshield']) && wp_validate_http_url($_GET['loginshield']) ? $_GET['loginshield'] : '';
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->

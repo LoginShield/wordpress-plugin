@@ -60,22 +60,11 @@ class RealmClient
                 'email' => $email,
                 'replace' => $replace
             );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Authorization: Token ' . $this->authorizationToken,
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
+            
+            $args = $this->prepare_json_post($fields, $this->authorizationToken);
+            $apiResponse = wp_remote_post($url, $args);
+            $apiResponseBody = wp_remote_retrieve_body($apiResponse);
+            $response = json_decode($apiResponseBody);
 
             if ($response && $response->isCreated) {
                 return $response;
@@ -120,22 +109,11 @@ class RealmClient
                 'realmScopedUserId' => $realmScopedUserId,
                 'redirect' => $redirect
             );
-            $data_string = json_encode($fields);
 
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token ' . $this->authorizationToken,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
+            $args = $this->prepare_json_post($fields, $this->authorizationToken);            
+            $apiResponse = wp_remote_post($url, $args);
+            $apiResponseBody = wp_remote_retrieve_body($apiResponse);
+            $response = json_decode($apiResponseBody);
 
             if ($response && $response->isCreated && $response->forward && $this->startsWith($response->forward, $this->endpointURL)) {
                 return $response;
@@ -170,22 +148,11 @@ conflict error
                 'realmId' => $this->realmId,
                 'realmScopedUserId' => $realmScopedUserId
             );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Authorization: Token ' . $this->authorizationToken,
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
+            
+            $args = $this->prepare_json_post($fields, $this->authorizationToken);
+            $apiResponse = wp_remote_post($url, $args);
+            $apiResponseBody = wp_remote_retrieve_body($apiResponse);
+            $response = json_decode($apiResponseBody);
 
             if ($response && $response->isDeleted) {
                 return $response;
@@ -223,22 +190,11 @@ conflict error
                 'isNewKey' => $isNewKey,
                 'redirect' => $redirect
             );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token ' . $this->authorizationToken,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
+            
+            $args = $this->prepare_json_post($fields, $this->authorizationToken);
+            $apiResponse = wp_remote_post($url, $args);
+            $apiResponseBody = wp_remote_retrieve_body($apiResponse);
+            $response = json_decode($apiResponseBody);
 
             if ($response && $response->forward && $this->startsWith($response->forward, $this->endpointURL)) {
                 return $response;
@@ -272,22 +228,11 @@ conflict error
             $fields = array (
                 'token' => $token
             );
-            $data_string = json_encode($fields);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token ' . $this->authorizationToken,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($data_string))
-            );
-
-            $apiResponse = curl_exec($ch);
-            curl_close($ch);
-
-            $response = json_decode($apiResponse);
+            
+            $args = $this->prepare_json_post($fields, $this->authorizationToken);
+            $apiResponse = wp_remote_post($url, $args);
+            $apiResponseBody = wp_remote_retrieve_body($apiResponse);
+            $response = json_decode($apiResponseBody);
 
             if ($response) {
                 return $response;
@@ -305,6 +250,37 @@ conflict error
         }
     }
 
+    private function prepare_json_get($access_token = '') {
+        $headers = array();
+        $headers['Accept'] = 'application/json';
+        if ($access_token) {
+            $headers['Authorization'] = 'Bearer ' . $access_token;
+        }
+        
+        $args = array(
+            'headers' => $headers,
+            'method'    => 'GET',
+            'sslverify' => true,
+        );
+        return $args;
+    }
+    
+    private function prepare_json_post($message, $access_token = '') {
+        $headers = array();
+        $headers['Accept'] = 'application/json';
+        $headers['Content-Type'] = 'application/json';
+        if ($access_token) {
+            $headers['Authorization'] = 'Bearer ' . $access_token;
+        }
+        
+        $args = array(
+            'headers' => $headers,
+            'method'    => 'POST',
+            'body'      => json_encode($message),
+            'sslverify' => true,
+        );
+        return $args;
+    }
 
     /**
      * A utility to check if a string starts with a sub string or not

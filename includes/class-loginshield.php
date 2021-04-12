@@ -49,6 +49,15 @@ class LoginShield {
 	protected $plugin_name;
 
 	/**
+	 * The display name of this plugin.
+	 *
+	 * @since    1.0.8
+	 * @access   protected
+	 * @var      string    $plugin_display_name    The string used to display the name of this plugin.
+	 */
+	protected $plugin_display_name;
+
+	/**
 	 * The current version of the plugin.
 	 *
 	 * @since    1.0.0
@@ -73,6 +82,7 @@ class LoginShield {
 			$this->version = '1.0.0';
 		}
 		$this->plugin_name = 'loginshield';
+        $this->plugin_display_name = 'LoginShield for WordPress';
 
 		$this->load_dependencies();
 		$this->set_locale();
@@ -163,7 +173,7 @@ class LoginShield {
 	 */
 	private function define_admin_hooks() {
 
-		$plugin_admin = new LoginShield_Admin( $this->get_plugin_name(), $this->get_version() );
+		$plugin_admin = new LoginShield_Admin( $this->get_plugin_name(), $this->get_version(), $this->get_plugin_display_name() );
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
@@ -189,7 +199,7 @@ class LoginShield {
 	 */
 	private function define_public_hooks() {
 
-		$plugin_public = new LoginShield_Public( $this->get_plugin_name(), $this->get_version() );
+		$plugin_public = new LoginShield_Public( $this->get_plugin_name(), $this->get_version(), $this->get_plugin_display_name() );
 
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
@@ -197,7 +207,7 @@ class LoginShield {
 
 	private function define_rest_apis() {
 
-	    $plugin_rest_api = new LoginShield_RestAPI( $this->get_plugin_name(), $this->get_version() );
+	    $plugin_rest_api = new LoginShield_RestAPI( $this->get_plugin_name(), $this->get_version(), $this->get_plugin_display_name() );
 
 	    $this->loader->add_action( 'rest_api_init', $plugin_rest_api, 'register_rest_api');
     }
@@ -220,6 +230,16 @@ class LoginShield {
 	 */
 	public function get_plugin_name() {
 		return $this->plugin_name;
+	}
+
+	/**
+	 * The name of the plugin used to display to the user or administrator.
+	 *
+	 * @since     1.0.8
+	 * @return    string    The display name of the plugin.
+	 */
+	public function get_plugin_display_name() {
+		return $this->plugin_display_name;
 	}
 
 	/**
@@ -251,10 +271,7 @@ class LoginShield {
             return __('You are already sign in.', 'personalize-login');
         }
 
-        $attributes['redirect'] = '';
-        if (isset($_REQUEST['redirect_to'])) {
-            $attributes['redirect'] = wp_validate_redirect($_REQUEST['redirect_to'], $attributes['redirect']);
-        }
+        $attributes['redirect'] = isset($_REQUEST['redirect_to']) && wp_validate_redirect($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
 
         return $this->get_template_html('loginshield_login_form', $attributes);
     }
@@ -266,7 +283,7 @@ class LoginShield {
 
 	    ob_start();
 	    do_action('personalize_login_before_'.$template_name);
-	    require('wp-content/plugins/loginshield/admin/partials/'.$template_name.'.php');
+	    require(plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/'.$template_name.'.php');
 	    do_action('personalize_login_after_'.$template_name);
 	    $html = ob_get_contents();
 	    ob_end_clean();
@@ -276,8 +293,8 @@ class LoginShield {
 
     public function redirect_to_custom_login() {
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-            $redirect_to = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
-            $reauth = isset( $_REQUEST['reauth'] ) ? boolval($_REQUEST['reauth']) : false;
+            $redirect_to = isset($_REQUEST['redirect_to']) && wp_validate_redirect($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+            $reauth = isset( $_REQUEST['reauth'] ) && filter_var($_REQUEST['reauth'], FILTER_VALIDATE_BOOLEAN );
 
             if (is_user_logged_in() && !$reauth) {
                 $this->redirect_logged_in_user($redirect_to);
@@ -285,7 +302,7 @@ class LoginShield {
             }
 
             $login_url = home_url('custom-login');
-            if (!empty($redirect_to)) {
+            if ($redirect_to) {
                 $login_url = add_query_arg('redirect_to', $redirect_to, $login_url);
             }
             $login_url = add_query_arg( 't', time(), $login_url );

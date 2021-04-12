@@ -33,6 +33,15 @@ class LoginShield_RestAPI
      */
     private $plugin_name;
 
+	/**
+	 * The display name of this plugin.
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $plugin_display_name    The display name of this plugin.
+	 */
+	private $plugin_display_name;
+
     /**
      * The version of this plugin.
      *
@@ -79,21 +88,69 @@ class LoginShield_RestAPI
     private $loginshield_authorization_token;
 
     /**
+     * Webauthz client instance
+     *
+     * @since    1.0.8
+     * @access   private
+     * @var      string    $webauthz    Webauthz client instance
+     */
+    private $webauthz;
+
+	/**
+	 * The webauthz discovery URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $webauthz_discovery_uri    webauthz discovery URI
+	 */
+	private $webauthz_discovery_uri;
+
+	/**
+	 * The webauthz registration URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $webauthz_register_uri    webauthz registration URI
+	 */
+	private $webauthz_register_uri;
+
+	/**
+	 * The webauthz request URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $webauthz_request_uri    webauthz request URI
+	 */
+	private $webauthz_request_uri;
+
+	/**
+	 * The webauthz exchange URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $webauthz_exchange_uri    webauthz exchange URI
+	 */
+	private $webauthz_exchange_uri;
+
+    /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
      * @param      string    $plugin_name       The name of this plugin.
      * @param      string    $version    The version of this plugin.
      */
-    public function __construct( $plugin_name, $version )
+    public function __construct( $plugin_name, $version, $plugin_display_name )
     {
         $this->plugin_name = $plugin_name;
+        $this->plugin_display_name = $plugin_display_name;
         $this->version = $version;
 
         $this->endpoint_url = get_home_url();
         $this->loginshield_endpoint_url = 'https://loginshield.com';
         $this->loginshield_realm_id = get_option('loginshield_realm_id');
-        $this->loginshield_authorization_token = get_option('loginshield_authorization_token');
+        $this->loginshield_authorization_token = get_option('loginshield_access_token');
+        
+        $this->webauthz = new Webauthz($plugin_display_name, $version);
 
         add_action('rest_api_init', array($this, 'register_rest_api'));
     }
@@ -130,50 +187,130 @@ class LoginShield_RestAPI
             'callback' => array($this, 'checkUserWithLogin')
         ));
 
-        register_rest_route( $this->plugin_name, '/token/verify', array(
+        register_rest_route( $this->plugin_name, '/realm/status', array(
             'methods'  => 'POST',
-            'callback' => array($this, 'verifyToken')
+            'callback' => array($this, 'checkRealmStatus')
         ));
 
-        register_rest_route( $this->plugin_name, '/token/request', array(
+        register_rest_route( $this->plugin_name, '/webauthz/start', array(
             'methods'  => 'POST',
-            'callback' => array($this, 'requestToken')
+            'callback' => array($this, 'webauthzStartAccessRequest')
         ));
 
-        register_rest_route( $this->plugin_name, '/token/exchange', array(
+        register_rest_route( $this->plugin_name, '/webauthz/exchange', array(
             'methods'  => 'POST',
-            'callback' => array($this, 'exchangeToken')
+            'callback' => array($this, 'webauthzExchangeToken')
         ));
+    }
+    
+    
+	/**
+	 * The webauthz discovery URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 */
+	private function get_webauthz_discovery_uri() {
+        if (!isset($this->webauthz_discovery_uri) || $this->webauthz_discovery_uri === '') {
+            $this->webauthz_discovery_uri = get_option('loginshield_webauthz_discovery_uri');
+        }
+        return $this->webauthz_discovery_uri;
+    }
+
+	private function set_webauthz_discovery_uri($webauthz_discovery_uri) {
+        $this->webauthz_discovery_uri = $webauthz_discovery_uri;
+        update_option('loginshield_webauthz_discovery_uri', $webauthz_discovery_uri);
+    }
+
+	/**
+	 * The webauthz registration URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 */
+	private function get_webauthz_register_uri() {
+        if (!isset($this->webauthz_register_uri) || $this->webauthz_register_uri === '') {
+            $this->webauthz_register_uri = get_option('loginshield_webauthz_register_uri');
+        }
+        return $this->webauthz_register_uri;
+    }
+    
+	private function set_webauthz_register_uri($webauthz_register_uri) {
+        $this->webauthz_register_uri = $webauthz_register_uri;
+        update_option('loginshield_webauthz_register_uri', $webauthz_register_uri);
+    }
+    
+	/**
+	 * The webauthz request URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 */
+	private function get_webauthz_request_uri() {
+        if (!isset($this->webauthz_request_uri) || $this->webauthz_request_uri === '') {
+            $this->webauthz_request_uri = get_option('loginshield_webauthz_request_uri');
+        }
+        return $this->webauthz_request_uri;
+    }
+    
+	private function set_webauthz_request_uri($webauthz_request_uri) {
+        $this->webauthz_request_uri = $webauthz_request_uri;
+        update_option('loginshield_webauthz_request_uri', $webauthz_request_uri);
+    }
+
+	/**
+	 * The webauthz exchange URI
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $webauthz_exchange_uri    webauthz exchange URI
+	 */
+	private function get_webauthz_exchange_uri() {
+        if (!isset($this->webauthz_exchange_uri) || $this->webauthz_exchange_uri === '') {
+            $this->webauthz_exchange_uri = get_option('loginshield_webauthz_exchange_uri');
+        }
+        return $this->webauthz_exchange_uri;
+    }
+    
+	private function set_webauthz_exchange_uri($webauthz_exchange_uri) {
+        $this->webauthz_exchange_uri = $webauthz_exchange_uri;
+        update_option('loginshield_webauthz_exchange_uri', $webauthz_exchange_uri);
     }
 
     /**
-     * Check if user has LoginShield enabled by Login information
+     * Check if user has LoginShield enabled by Login information.
+     *
+     * This API is used by the login activity, so the user does NOT have
+     * to be authenticated to get this information. The function returns
+     * 'isActivated' value of `true` if the username exists and
+     * has activated LoginShield, and `false` otherwise.
      *
      * @param WP_REST_Request $request
      *
      * @return WP_REST_Response
      */
     public function checkUserWithLogin(WP_REST_Request $request) {
-        try {
+        try {            
             $login = $request->get_param('login');
+            if (!isset($login) || $login === '') {
+                return new WP_REST_Response([
+                    'error'     => 'Bad request',
+                    'message'   => $exception->getMessage(),
+                ], 400);
+            }
 
-            $userByLogin = get_userdatabylogin($login);
-            $userByEmail = get_user_by('email', $login);
-
-            if ($userByLogin) $user = $userByLogin;
-            if ($userByEmail) $user = $userByEmail;
+            $user = get_user_by('login', sanitize_user($login));
 
             if (!$user) {
                 return new WP_REST_Response([
-                    'isLoginShieldEnabled'  => false,
+                    'isActivated'  => false,
                 ], 200);
             }
 
             $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-            $isLoginShieldEnabled = get_user_meta($userId, 'loginshield_is_activated', true);
-
+            $isActivated = $this->get_boolean_user_meta($userId, 'loginshield_is_activated');
             return new WP_REST_Response([
-                'isLoginShieldEnabled'      => $isLoginShieldEnabled,
+                'isActivated'      => $isActivated,
             ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([
@@ -184,42 +321,84 @@ class LoginShield_RestAPI
     }
 
 
-    public function verifyToken(WP_REST_Request $request) {
+    /**
+     * Check if the site is configured with a LoginShield authentication
+     * realm and is able to use it. This API requires the administrator
+     * capability 'manage_options'.
+     *
+     * Possible result states:
+     *
+     * 1. site is not configured with realm id or credentials; administrator
+     *    can request access to an authentication realm using webauthz
+     *    (see start webauthz access request)
+     * 2. site is configured with realm id and credentials, but does not yet
+     *    have permission to manage the authentication realm because domain
+     *    verification is required; administrator can verify control of the
+     *    domain using the automated or manual procedure
+     * 3. site is configured with realm id and credentials, but cannot manage
+     *    the authentication realm because payment is required (either the free
+     *    trial expired, or the subscription was suspended due to non-payment,
+     *    or the subscription was cancelled); the administrator can visit
+     *    loginshield.com to update payment information and restore the subscription
+     * 4. site is configured with realm id and credentials, and is able to
+     *    manage the authentication realm; users can now activate LoginShield
+     *    on their accounts and use it to log in
+     *
+     */
+    public function checkRealmStatus(WP_REST_Request $request) {
         try {
-            $realmId = get_option('loginshield_realm_id');
+            if (!is_user_logged_in()) {
+                return new WP_REST_Response([
+                    'error'     => 'Unauthorized'
+                ], 401);
+            }
+            
+            $user = wp_get_current_user();
+            if (!user_can($user, 'manage_options')) {
+                return new WP_REST_Response([
+                    'error'     => 'Forbidden',
+                    'isEdited' => false
+                ], 403);
+            }
+            
             $accessToken = get_option('loginshield_access_token');
-
-            if (!isset($accessToken) || $accessToken === "") {
+            
+            if (empty($accessToken)) {
                 return new WP_REST_Response([
                     'error'      => 'no-access-token',
                     'message'    => 'Set up your free trial or manage your subscription.',
                 ], 200);
             }
-
-            if (!isset($realmId) || $realmId === "") {
-                return new WP_REST_Response([
-                    'error'      => 'no-realm-id',
-                    'message'    => 'Set up your free trial or manage your subscription.',
-                ], 200);
+            
+            $response = null;
+            
+            // after obtaining access via webauthz, we'll have a client_id and client_token but
+            // no realm info yet; so if we don't have a realm id, try to find it by url and then
+            // store the realm id
+            $realmId = get_option('loginshield_realm_id');
+            if (isset($realmId) && $realmId) {
+                $response = $this->fetchRealmInfoById($realmId, $accessToken);
+            } else {
+                $response = $this->fetchRealmInfoByURL(get_site_url(), $accessToken);
             }
-
-            $webauthz = new Webauthz();
-            $response = $webauthz->fetchRealmId($accessToken);
 
             if ($response->error || !isset($response->payload)) {
                 return new WP_REST_Response([
-                    'error'      => 'no-access-token',
+                    'error'      => $response->error,
                     'message'    => 'Set up your free trial or manage your subscription.',
                 ], 200);
             }
 
             if ($response->payload->id) {
-                $realmId = $response->payload->id;
-                update_option('loginshield_realm_id', $realmId);
+                if ($realmId !== $response->payload->id) {
+                    $realmId = $response->payload->id;
+                    update_option('loginshield_realm_id', $realmId);
+                }
 
                 return new WP_REST_Response([
                     'status'    => 'success',
                     'message'   => 'You are ready to use LoginShield.',
+                    'realmId'   => $realmId, // to update the UI after initial setup without reloading the page
                 ], 200);
             }
 
@@ -237,43 +416,128 @@ class LoginShield_RestAPI
 
 
     /**
-     * Initialize Admin Setting
+     * Start a Webauthz access request so we can manage an authentication realm
      *
      * @param WP_REST_Request $request
      *
      * @return WP_REST_Response
      */
-    public function requestToken(WP_REST_Request $request) {
+    public function webauthzStartAccessRequest(WP_REST_Request $request) {
         try {
-            $client_id = isset($_REQUEST['client_id']) ? $_REQUEST['client_id'] : '';
-            $client_token = isset($_REQUEST['redirect_to']) ? $_REQUEST['client_token'] : '';
-            $grant_token = isset($_REQUEST['grant_token']) ? $_REQUEST['grant_token'] : '';
-
-            if ($client_id !== '' && $client_token !== '' && $grant_token !== '') {
-                $accessToken = $this->getAccessToken($grant_token);
-                if ($accessToken) {
-                    return new WP_REST_Response([
-                        'status'     => 'success',
-                    ], 200);
-                } else {
-                    return new WP_REST_Response([
-                        'error'      => 'invalid-credentials',
-                        'message'    => 'Invalid Credentials',
-                    ], 200);
-                }
-            } else {
-                $response = $this->verifyRealmInfo();
-                if ($response->error) {
+            $response = $this->fetchRealmInfoByURL(get_site_url());
+            
+            if ($response->error && $response->isWebauthz) {
+                $webauthz = $this->webauthz;
+                
+                $webauthzConfigResponse = $webauthz->fetchWebAuthzConfig($this->get_webauthz_discovery_uri());
+                
+                if ($webauthzConfigResponse->error) {
+                    error_log('LoginShield webauthz fetchWebAuthzConfig failed');
                     return new WP_REST_Response([
                         'error'      => $response->error,
-                        'response'   => $response->payload,
+                        'message'    => 'Service not available',
+                    ], 200);
+                }                
+                
+                $webauthz_config = $webauthzConfigResponse->payload;
+                
+                // Get specific uris
+                $webauthz_register_uri = $webauthz_config->webauthz_register_uri;
+                $webauthz_request_uri = $webauthz_config->webauthz_request_uri;
+                $webauthz_exchange_uri = $webauthz_config->webauthz_exchange_uri;
+
+                // Store $webauthz_register_uri, $webauthz_request_uri, $webauthz_exchange_uri
+                $this->set_webauthz_register_uri($webauthz_register_uri);
+                $this->set_webauthz_request_uri($webauthz_request_uri);
+                $this->set_webauthz_exchange_uri($webauthz_exchange_uri);
+                
+                // prepare registration info
+                $client_name = get_bloginfo('name');
+                $client_version = $this->plugin_display_name . " v" . $this->version;
+                $grant_redirect_uri = add_query_arg(
+                    'page',
+                    $this->plugin_name,
+                    admin_url('/options-general.php')
+                );
+                
+                // check if we already registered a client
+                $client_id = get_option( 'loginshield_client_id' );
+                $client_token = get_option( 'loginshield_client_token' );
+                
+                $clientInfoResponse = null;
+                if (!isset($client_id) || $client_id === '' || !isset($client_token) || $client_token === '') {
+                    // new registration
+                    $clientInfoResponse = $webauthz->registerClient($webauthz_register_uri, $client_name, $client_version, $grant_redirect_uri);
+                } else {
+                    // update existing registration
+                    $clientInfoResponse = $webauthz->registerClient($webauthz_register_uri, $client_name, $client_version, $grant_redirect_uri, $client_token);
+                }
+                
+                if ($clientInfoResponse->error) {
+                    error_log('LoginShield webauthz registerClient failed');
+                    return new WP_REST_Response([
+                        'error'      => $response->error,
+                        'message'    => 'Service not available',
                     ], 200);
                 }
+                
+                $clientInfo = $clientInfoResponse->payload;
+                
+                if (isset($clientInfo)) {
+                    $client_id = $webauthz->sanitizeClientId( $clientInfo->client_id );
+                    $client_token = $webauthz->sanitizeToken( $clientInfo->client_token );
+
+                    if ($client_id) {
+                        update_option( 'loginshield_client_id', $client_id );
+                    }
+                    if ($client_token) {
+                        update_option( 'loginshield_client_token', $client_token );
+                    }
+                }                
+                
+                // start the access request with the realm and scope we obtained from the initial failed access in fetchRealmInfoByURL
+                $realm = get_option( 'loginshield_realm' );
+                $scope = get_option( 'loginshield_scope' );
+                $client_state = $webauthz->generateRandomString();
+                update_option( 'loginshield_client_state', $client_state );
+                
+                $request_info = array(
+                    'realm' => $realm,
+                    'scope' => $scope,
+                    'client_state' => $client_state,
+                );
+                
+                $requestAccessResponse = $webauthz->requestAccess($webauthz_request_uri, $request_info, $client_token);
+                
+                if ($requestAccessResponse->error) {
+                    error_log('LoginShield webauthz requestAccess failed');
+                    return new WP_REST_Response([
+                        'error'      => $response->error,
+                        'message'    => 'Service not available',
+                    ], 200);
+                }
+                
+                $requestAccessResult = $requestAccessResponse->payload;
+                
+                if ($requestAccessResult->redirect) {
+                    return (object) array(
+                        'status'=> 'success',
+                        'payload'=> $requestAccessResult
+                    );
+                }
+                
                 return new WP_REST_Response([
-                    'status'    => 'success',
-                    'payload'   => $response->payload,
+                    'error'      => 'unknown-error',
+                    'response'   => $requestAccessResponse->payload,
                 ], 200);
+                
             }
+            
+            return (object) array(
+                'status'=> 'success',
+                'payload'=> $response->payload
+            );
+            
         } catch (\Exception $exception) {
             return new WP_REST_Response([
                 'error'     => 'initialization-failed',
@@ -283,69 +547,74 @@ class LoginShield_RestAPI
     }
 
     /**
-     * Get Access Token
-     *
-     * @param $grantToken
-     * @return WP_REST_Response
+     * Fetch realm info or Webauthz challenge when we already have a realm id
+     * and access token.
      */
-    private function getAccessToken($grantToken)
+    private function fetchRealmInfoById($realmId, $accessToken)
     {
-        try {
-            $webauthz = new Webauthz();
-
-            $response = $webauthz->getAccessToken();
-
-            if ($response->error) {
-                return new WP_REST_Response([
-                    'error'     => $response->error,
-                    'message'   => $response->message,
-                ], 200);
+        $url = 'https://loginshield.com/service/realm';
+        $url = add_query_arg( 'id', $realmId, $url );
+        
+        $args = $this->prepare_json_get($accessToken);        
+        
+        $response = wp_remote_get($url, $args);
+        
+        $responseInfo = $this->get_json_from_response($response);
+        if ($responseInfo->error) {
+            $webauthz = $this->webauthz;
+            $webauthzInfo = $webauthz->checkResponseForWebauthz( $responseInfo->response );
+            
+            if ($webauthzInfo->isWebauthz === true) {
+                update_option( 'loginshield_realm', $webauthzInfo->realm );
+                update_option( 'loginshield_scope', $webauthzInfo->scope );
+                update_option( 'loginshield_path', $webauthzInfo->path );
+                update_option( 'loginshield_webauthz_discovery_uri', $webauthzInfo->webauthz_discovery_uri );
             }
 
-            return new WP_REST_Response([
-                'status'    => 'success',
-                'payload'   => $response->payload,
-            ], 200);
-        } catch (\Exception $exception) {
-            return new WP_REST_Response([
-                'error'     => 'fetch-failed',
-                'message'   => $exception->getMessage(),
-            ], 500);
+            return (object) array(
+                'error' => 'fetch-failed',
+                'isWebauthz' => $webauthzInfo->isWebauthz,
+                'response' => $responseInfo->response,
+            );
         }
+        
+        return $responseInfo;
     }
-
-
+    
     /**
-     * Verify Realm Info
-     *
-     * @return object
+     * Fetch realm info or Webauthz challenge when we already have a realm id
+     * and access token.
      */
-    private function verifyRealmInfo()
+    private function fetchRealmInfoByURL($realmURL, $accessToken = '')
     {
-        try {
-            $webauthz = new Webauthz();
-
-            $response = $webauthz->verifyRealmInfo();
-
-            if ($response->error) {
-                return (object) array(
-                    'error'      => $response->error,
-                    'message'    => $response->message,
-                );
+        $url = 'https://loginshield.com/service/realm';
+        $url = add_query_arg( 'uri', $realmURL, $url );
+        
+        $args = $this->prepare_json_get($accessToken);               
+        
+        $response = wp_remote_get($url, $args);
+        
+        $responseInfo = $this->get_json_from_response($response);
+        if ($responseInfo->error) {
+            $webauthz = $this->webauthz;
+            $webauthzInfo = $webauthz->checkResponseForWebauthz( $responseInfo->response );
+            
+            if ($webauthzInfo->isWebauthz === true) {
+                update_option( 'loginshield_realm', $webauthzInfo->realm );
+                update_option( 'loginshield_scope', $webauthzInfo->scope );
+                update_option( 'loginshield_path', $webauthzInfo->path );
+                update_option( 'loginshield_webauthz_discovery_uri', $webauthzInfo->webauthz_discovery_uri );
             }
 
             return (object) array(
-                'status'    => 'success',
-                'payload'   => $response->payload,
-            );
-        } catch (\Exception $exception) {
-            return (object) array(
-                'error'     => 'fetch-failed',
-                'message'   => $exception->getMessage(),
+                'error' => 'fetch-failed',
+                'isWebauthz' => $webauthzInfo->isWebauthz,
+                'response' => $responseInfo->response,
             );
         }
+        
+        return $responseInfo;
     }
-
 
     /**
      * Exchange Token
@@ -353,7 +622,7 @@ class LoginShield_RestAPI
      * @param WP_REST_Request $request
      * @return WP_REST_Response
      */
-    public function exchangeToken(WP_REST_Request $request) {
+    public function webauthzExchangeToken(WP_REST_Request $request) {
         try {
             $clientId = $request->get_param('client_id');
             $clientState = $request->get_param('client_state');
@@ -378,11 +647,13 @@ class LoginShield_RestAPI
                 ], 400);
             }
 
-            $webauthz = new Webauthz();
+            $webauthz_exchange_uri = $this->get_webauthz_exchange_uri();
+            $client_token = get_option( 'loginshield_client_token' );
+            $webauthz = $this->webauthz;
             if ($grantToken) {
-                $response = $webauthz->exchangeToken('grant', $grantToken);
+                $response = $webauthz->exchangeToken($webauthz_exchange_uri, 'grant', $grantToken, $client_token);
             } else if ($refresh && $refreshToken) {
-                $response = $webauthz->exchangeToken('refresh', $refreshToken);
+                $response = $webauthz->exchangeToken($webauthz_exchange_uri, 'refresh', $refreshToken, $client_token);
             } else {
                 return new WP_REST_Response([
                     'error'    => 'invalid-request',
@@ -418,36 +689,12 @@ class LoginShield_RestAPI
             }
 
             update_option('loginshield_access_token', $accessToken);
-            update_option('loginshield_access_token_max_seconds', $accessTokenMaxSeconds);
+            update_option('loginshield_access_token_not_after', time() + $accessTokenMaxSeconds);
             update_option('loginshield_refresh_token', $refreshToken);
-            update_option('loginshield_refresh_token_max_seconds', $refreshTokenMaxSeconds);
-
-            update_option('loginshield_authorization_token', $accessToken);
-
-            $webauthz = new Webauthz();
-            $response = $webauthz->fetchRealmId($accessToken);
-
-            if ($response->error || !isset($response->payload)) {
-                return new WP_REST_Response([
-                    'error'      => 'no-access-token',
-                    'message'    => 'Set up your free trial or manage your subscription.',
-                ], 200);
-            }
-
-            if ($response->payload->id) {
-                $realmId = $response->payload->id;
-                update_option('loginshield_realm_id', $realmId);
-
-                return new WP_REST_Response([
-                    'status'        => 'granted',
-                    'access_token'  => $accessToken,
-                    'realm_id'      => $realmId,
-                ], 200);
-            }
+            update_option('loginshield_refresh_token_not_after', time() + $refreshTokenMaxSeconds);
 
             return new WP_REST_Response([
-                'error'         => 'unknown-issue',
-                'access_token'  => 'Set up your free trial or manage your subscription.',
+                'status'         => 'success',
             ], 200);
         } catch (\Exception $exception) {
             return new WP_REST_Response([
@@ -501,10 +748,17 @@ class LoginShield_RestAPI
             $redirectTo = $request->get_param('redirectTo'); // optional, for normal login only (not for activation)
 
             if ($mode === 'activate-loginshield') {
+                
+                if (!is_user_logged_in()) {
+                    return new WP_REST_Response([
+                        'error'     => 'Unauthorized'
+                    ], 401);
+                }
+                
                 $current_user = wp_get_current_user();
                 $user_id = $current_user->ID;
-                $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
-                $loginshieldUserId = get_user_meta($user_id, 'loginshield_user_id', true);
+                $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
+                $loginshieldUserId = $this->get_string_user_meta($user_id, 'loginshield_user_id');
 
                 if ($isActivated && $loginshieldUserId) {
                     $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
@@ -542,12 +796,12 @@ class LoginShield_RestAPI
                 if ($verifyLoginResponse->realmId == $this->loginshield_realm_id) {
                     $user_id = $this->findUserIdByLoginShieldUserId($verifyLoginResponse->realmScopedUserId);
                     if ($user_id) {
-                        $isActivated = get_user_meta($user_id, 'loginshield_is_activated', true);
+                        $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
                         if (!$isActivated) {
-                            $this->setUserMeta($user_id, 'loginshield_is_activated', true, true);
-                            $this->setUserMeta($user_id, 'loginshield_is_registered', true, true);
-                            $this->setUserMeta($user_id, 'loginshield_is_confirmed', true, true);
-                            $this->setUserMeta($user_id, 'loginshield_user_id', $verifyLoginResponse->realmScopedUserId, true);
+                            $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', true);
+                            $this->set_boolean_user_meta($user_id, 'loginshield_is_registered', true);
+                            $this->set_boolean_user_meta($user_id, 'loginshield_is_confirmed', true);
+                            $this->set_string_user_meta($user_id, 'loginshield_user_id', $verifyLoginResponse->realmScopedUserId);
                         }
                         $this->autoLoginWithCookie($user_id);
                         return new WP_REST_Response([
@@ -576,8 +830,8 @@ class LoginShield_RestAPI
                 }
 
                 $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-                $isActivated = get_user_meta($userId, 'loginshield_is_activated', true);
-                $loginshieldUserId = get_user_meta($userId, 'loginshield_user_id', true);
+                $isActivated = $this->get_boolean_user_meta($userId, 'loginshield_is_activated');
+                $loginshieldUserId = $this->get_string_user_meta($userId, 'loginshield_user_id');
                 
                 $login_page_id = get_option( 'loginshield_login_page' );
                 $login_url = get_permalink( $login_page_id );
@@ -621,7 +875,7 @@ class LoginShield_RestAPI
         try {
             $action = $request->get_param('action');
             if ($action && $action == 'register-loginshield-user') {
-                return $this->enableLoginShieldForAccount($request);
+                return $this->activateLoginShieldForCurrentUser($request);
             }
 
             if ($action && $action == 'update-security') {
@@ -668,7 +922,7 @@ class LoginShield_RestAPI
             }
             
             // delete the user registration via LoginShield API
-            $loginshield_user_id = get_user_meta($user_id, 'loginshield_user_id', true);
+            $loginshield_user_id = $this->get_string_user_meta($user_id, 'loginshield_user_id');
             $isDeletedFromAuthenticationServer = false;
             if ($loginshield_user_id) {
                 $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
@@ -694,22 +948,32 @@ class LoginShield_RestAPI
     }
 
     /**
-     * Enable LoginShield for Account
+     * Enable LoginShield for current user.
+     *
+     * All users are allowed to activate/deactivate LoginShield in their profile settings, so
+     * we use current user id and do not check for permissions here.
      *
      * @param WP_REST_Request $request
      *
      * @return WP_REST_Response
      */
-    public function enableLoginShieldForAccount(WP_REST_Request $request)
+    public function activateLoginShieldForCurrentUser(WP_REST_Request $request)
     {
         try {
+            if (!is_user_logged_in()) {
+                return new WP_REST_Response([
+                    'error'     => 'Unauthorized',
+                    'isEdited' => false
+                ], 401);
+            }
+            
             $current_user = wp_get_current_user();
             $user_id = $current_user->ID;
             $user_name = $current_user->user_login;
             $user_email = $current_user->user_email;
 
-            $loginshieldUserId = get_user_meta($user_id, 'loginshield_user_id', true);
-            if (isset($loginshieldUserId) && $loginshieldUserId) {
+            $realmScopedUserId = $this->get_string_user_meta($user_id, 'loginshield_user_id');
+            if ($realmScopedUserId) {
                 return new WP_REST_Response([
                     'forward'     => $this->endpoint_url . '/account/loginshield/continue-registration'
                 ], 200);
@@ -724,6 +988,7 @@ class LoginShield_RestAPI
             }
 
             $response = $loginshield->createRealmUser($realmScopedUserId, $user_name, $user_email, true);
+            
             if ($response->error) {
                 return new WP_REST_Response([
                     'error'     => 'registration failed',
@@ -732,10 +997,10 @@ class LoginShield_RestAPI
             }
 
             if ($response->isCreated) {
-                $this->setUserMeta($user_id, 'loginshield_is_activated', false, true);
-                $this->setUserMeta($user_id, 'loginshield_is_registered', true, true);
-                $this->setUserMeta($user_id, 'loginshield_is_confirmed', false, true);
-                $this->setUserMeta($user_id, 'loginshield_user_id', $realmScopedUserId, true);
+                $this->set_boolean_user_meta($user_id, 'loginshield_is_registered', true);
+                $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', false);
+                $this->set_boolean_user_meta($user_id, 'loginshield_is_confirmed', false);
+                $this->set_string_user_meta($user_id, 'loginshield_user_id', $realmScopedUserId);
 
                 if ($response->forward) {
                     return new WP_REST_Response([
@@ -770,6 +1035,13 @@ class LoginShield_RestAPI
     public function updateSecurity(WP_REST_Request $request)
     {
         try {
+            
+            if (!is_user_logged_in()) {
+                return new WP_REST_Response([
+                    'error'     => 'Unauthorized'
+                ], 401);
+            }
+            
             $isActive = $request->get_param('isActive');
             if (!isset($isActive)) {
                 return new WP_REST_Response([
@@ -777,20 +1049,22 @@ class LoginShield_RestAPI
                     'message'   => 'missing parameter'
                 ], 400);
             }
+            
+            $isActive = $isActive === true || $isActive === 'true' || $isActive === 'checked' ? true : false;
 
             $current_user = wp_get_current_user();
             $user_id = $current_user->ID;
             
-            $isRegistered = get_user_meta($user_id, 'loginshield_is_registered', true);
-            $isConfirmed = get_user_meta($user_id, 'loginshield_is_confirmed', true);
+            $isRegistered = $this->get_boolean_user_meta($user_id, 'loginshield_is_registered');
+            $isConfirmed = $this->get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
             
             if ($isRegistered && $isConfirmed) {
-                $this->setUserMeta($user_id, 'loginshield_is_activated', $isActive, true);
+                $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', $isActive);
                 return new WP_REST_Response([
                     'isActive'     => $isActive
                 ], 200);
             } else {
-                $this->setUserMeta($user_id, 'loginshield_is_activated', false, true);
+                $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', false);
                 return new WP_REST_Response([
                     'isActive'     => false,
                     'error'        => 'Must complete registration to activate'
@@ -870,24 +1144,36 @@ class LoginShield_RestAPI
 
         return null;
     }
-
-    /**
-     * Login WordPress User Meta
-     *
-     * @param string $user_id
-     * @param string $meta_key
-     * @param string $meta_value
-     * @param boolean $unique
-     *
-     * @return void
-     */
-    private function setUserMeta($user_id, $meta_key, $meta_value, $unique = false)
-    {
-        $hasMeta = get_user_meta($user_id, $meta_key, true);
-        if (isset($hasMeta)) {
-            update_user_meta($user_id, $meta_key, $meta_value);
+    
+    private function prepare_json_get($access_token = '') {
+        $headers = array();
+        $headers['Accept'] = 'application/json';
+        if ($access_token) {
+            $headers['Authorization'] = 'Bearer ' . $access_token;
+        }
+        
+        $args = array(
+            'headers' => $headers,
+            'method'    => 'GET',
+            'sslverify' => true,
+        );
+        return $args;
+    }
+    
+    private function get_json_from_response($response) {
+        $status = wp_remote_retrieve_response_code($response);
+        $contentType = wp_remote_retrieve_header($response, 'content-type');
+        $payload = (object) array();
+        
+        if ($contentType === 'application/json' || $this->startsWith($contentType, 'application/json;')) {
+            $bodyJson = wp_remote_retrieve_body($response);
+            $payload = json_decode($bodyJson);
+        }
+        
+        if ($status === 200) {
+            return (object) array('response' => $response, 'payload' => $payload);
         } else {
-            add_user_meta($user_id, $meta_value, $meta_value, $unique);
+            return (object) array('response' => $response, 'payload' => $payload, 'error' => wp_remote_retrieve_response_message($response), 'http_status' => $status);
         }
     }
 
@@ -920,4 +1206,50 @@ class LoginShield_RestAPI
         global $wpdb;
         return $wpdb->query("SELECT * FROM ". ($site_wide ? $wpdb->base_prefix : $wpdb->prefix). "options WHERE option_name ='$name' LIMIT 1");
     }
+    
+    /**
+     * Retrieves the user meta key as a boolean; if it has a string value such as
+     * 'true' or 'false', it is converted to a boolean value for the result.
+     */
+    private function get_boolean_user_meta($user_id, $key) {
+        $value = get_user_meta($user_id, $key, true);
+        return isset($value) && is_string($value) && filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+    
+    /**
+     * Updates the user meta key with a string value of either 'true' or 'false'.
+     * If the input is a non-empty string with values OTHER THAN '0', 'false', 'off',
+     * it will be stored as 'true'.
+     */
+    private function set_boolean_user_meta($user_id, $key, $value) {
+        $sanitized = isset($value) ? $value : '';
+        if (is_string($sanitized)) {
+            $sanitized = filter_var($sanitized, FILTER_VALIDATE_BOOLEAN);
+        }
+        update_user_meta($user_id, $key, $sanitized ? 'true' : 'false');
+    }
+    
+    /**
+     * Retrieves the user meta key as a string
+     */
+    private function get_string_user_meta($user_id, $key) {
+        $value = get_user_meta($user_id, $key, true);
+        return isset($value) && is_string($value) ? $value : '';
+    }
+    
+    /**
+     * Updates the user meta key with a string value
+     */
+    private function set_string_user_meta($user_id, $key, $value) {
+        $sanitized = isset($value) ? $value : '';
+        if (!is_string($sanitized)) {
+            try {
+                $sanitized = strval($sanitized);
+            } catch (\Exception $exception) {
+                $sanitized = '';
+            }
+        }
+        update_user_meta($user_id, $key, $sanitized);
+    }
+    
 }

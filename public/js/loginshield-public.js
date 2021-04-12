@@ -87,7 +87,7 @@ publicloginshield.LoginForm = (function($) {
 
 			this.checkUserLoginshieldEnabled({ login })
 				.then(response => {
-					if (response && response.isLoginShieldEnabled) {
+					if (response && response.isActivated) {
             this.enableLoginShieldForm(login);
 					} else {
             this.isLoading = false;

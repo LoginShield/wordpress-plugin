@@ -14,28 +14,9 @@
 /**
  * Get loginshield option fields value
  */
-if(function_exists('loginshield_option_fields')){
-    $args = loginshield_option_fields();
-    if($args){
-        foreach ($args as $args_val) {
-            switch($args_val){
-                case 'loginshield_client_id':
-                    $loginshield_client_id = get_option($args_val) ;
-                    break;
-                case 'loginshield_realm_id':
-                    $loginshield_realm_id = get_option($args_val) ;
-                    break;
-                case 'loginshield_authorization_token':
-                    $loginshield_authorization_token = get_option($args_val) ;
-                    break;
-            }
-        }
-    }
-}
 
-$client_id = $_GET['client_id'];
-$client_state = $_GET['client_state'];
-$grant_token = $_GET['grant_token'];
+$loginshield_client_id = get_option('loginshield_client_id');
+$loginshield_realm_id = get_option('loginshield_realm_id');
 
 ?>
 
@@ -43,14 +24,7 @@ $grant_token = $_GET['grant_token'];
 <section class="login-shield">
     <div class="LOGINSHIELDFormInside clear p40">
         <h1>LoginShield Settings</h1>
-        <form id="LoginShieldSettingsForm" method="post" action="action.php"
-              data-client-id="<?php echo esc_attr($client_id); ?>"
-              data-client-state="<?php echo esc_attr($client_state); ?>"
-              data-grant-token="<?php echo esc_attr($grant_token); ?>">
-            <?php
-            settings_fields('loginshield-settings');
-            do_settings_sections('loginshield-settings');
-            ?>
+        <form id="LoginShieldSettingsForm" method="post" action="action.php">
             <div class="form-group w-50 float-left">
                 <p class="wp-lead">Manage your enterprise account settings at <a href="https://loginshield.com" title="LoginShield" target="_blank">https://loginshield.com</a></p>
             </div>
@@ -69,9 +43,9 @@ $grant_token = $_GET['grant_token'];
             </div>
             <div class="form-group w-50 float-left">
                 <h4>Advanced</h4>
-                <p><?php esc_html_e('Endpoint URL', 'loginshield') ?>: <a href="https://loginshield.com" target="_blank">https://loginshield.com</a></p>
-                <p><?php esc_html_e('Client ID', 'loginshield') ?>: <?php if($loginshield_client_id) { echo esc_html($loginshield_client_id); } else { echo 'Not configured'; } ?></p>
-                <p><?php esc_html_e('Realm ID', 'loginshield') ?>: <?php if($loginshield_realm_id) { echo esc_html($loginshield_realm_id); } else { echo 'Not configured'; } ?></p>                
+                <p><?php esc_html_e('Endpoint URL', 'loginshield') ?>: <span id="loginshield_endpoint_url"><a href="https://loginshield.com" target="_blank">https://loginshield.com</a></span></p>
+                <p><?php esc_html_e('Client ID', 'loginshield') ?>: <span id="loginshield_client_id"><?php if($loginshield_client_id) { echo esc_html($loginshield_client_id); } else { echo 'Not configured'; } ?></span></p>
+                <p><?php esc_html_e('Realm ID', 'loginshield') ?>: <span id="loginshield_realm_id"><?php if($loginshield_realm_id) { echo esc_html($loginshield_realm_id); } else { echo 'Not configured'; } ?></span></p>
             </div>            
         </form>
     </div>

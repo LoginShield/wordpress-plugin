@@ -23,13 +23,22 @@
 class LoginShield_Public {
 
 	/**
-	 * The ID of this plugin.
+	 * The unique ID of this plugin.
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
+	 * @var      string    $plugin_name    The unique ID of this plugin.
 	 */
 	private $plugin_name;
+
+	/**
+	 * The display name of this plugin.
+	 *
+	 * @since    1.0.8
+	 * @access   private
+	 * @var      string    $plugin_display_name    The display name of this plugin.
+	 */
+	private $plugin_display_name;
 
 	/**
 	 * The version of this plugin.
@@ -47,9 +56,10 @@ class LoginShield_Public {
 	 * @param      string    $plugin_name       The name of the plugin.
 	 * @param      string    $version    The version of this plugin.
 	 */
-	public function __construct( $plugin_name, $version ) {
+	public function __construct( $plugin_name, $version, $plugin_display_name ) {
 
 		$this->plugin_name = $plugin_name;
+		$this->plugin_display_name = $plugin_display_name;
 		$this->version = $version;
 
         add_action( 'login_form_login', array( $this, 'redirect_to_custom_login' ) );
@@ -113,8 +123,8 @@ class LoginShield_Public {
      */
     public function redirect_to_custom_login() {
         if ( $_SERVER['REQUEST_METHOD'] == 'GET' ) {
-            $redirect_to = isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : null;
-            $reauth = isset( $_REQUEST['reauth'] ) ? boolval($_REQUEST['reauth']) : false;
+            $redirect_to = isset($_REQUEST['redirect_to']) && wp_validate_redirect($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : '';
+            $reauth = isset( $_REQUEST['reauth'] ) && filter_var($_REQUEST['reauth'], FILTER_VALIDATE_BOOLEAN );
 
             if ( is_user_logged_in() && !$reauth ) {
                 $this->redirect_logged_in_user( $redirect_to );
@@ -124,7 +134,7 @@ class LoginShield_Public {
             // The rest are redirected to the login page
             $login_page_id = get_option( 'loginshield_login_page' );
             $login_url = get_permalink( $login_page_id );
-            if ( ! empty( $redirect_to ) ) {
+            if ($redirect_to) {
                 $login_url = add_query_arg( 'redirect_to', $redirect_to, $login_url );
             }
             $login_url = add_query_arg( 't', time(), $login_url );

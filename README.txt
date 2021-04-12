@@ -7,7 +7,7 @@ Tested up to: 5.7
 Requires PHP: 5.6.20
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: trunk
+Stable tag: v1.0.8
 
 LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
 
@@ -70,6 +70,12 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 9. Use camera button to snap QR code when needed
 
 == Changelog ==
+
+= 1.0.8 =
+* Fix: incorrect stable tag
+* Fix: using curl instead of wp http api
+* Fix: not validating or sanitizing some request parameters
+* Fix: calling file locations poorly when loading template
 
 = 1.0.7 =
 * Add: link to plugin settings under the plugin name in all plugins list
