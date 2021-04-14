@@ -7,7 +7,7 @@ Tested up to: 5.7
 Requires PHP: 5.6.20
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: v1.0.8
+Stable tag: v1.0.9
 
 LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
 
@@ -71,6 +71,9 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 
 == Changelog ==
 
+= 1.0.9 =
+* Fix: missing banner and icon for WordPress plugin directory
+
 = 1.0.8 =
 * Fix: incorrect stable tag
 * Fix: using curl instead of wp http api
@@ -111,7 +114,7 @@ Subscription price: $10/month base fee + $0.05/month for each monthly active use
 
 A monthly active user is a WordPress user who has LoginShield enabled and logs in at least one time during the calendar month. For example, if you have 5000 registered users, and 1000 of them enabled LoginShield, but only 500 of them log in at least once during the month, then you will be billed for 500 monthly active users for that month.
 
-The monthly active user pricing makes it possible to provide you with a very predictable price. You pay the same rate, regardless of how many times a user logs in to the site.
+The monthly active user pricing makes it possible to provide you with a very predictable price. You pay the same rate, regardless of how many times a user logs in to the site that month.
 
 == Managing your LoginShield subscription ==
 
@@ -121,7 +124,7 @@ You can visit [https://loginshield.com](https://loginshield.com) to manage your 
 The plugin shares the following information with [LoginShield](https://loginshield.com). For more information, see our [Privacy Policy](https://loginshield.com/notice/privacy/).
 
 = Site Name, Site Icon, and Site URL =
-When you activate the plugin, the site name, icon, and URL are sent to LoginShield to register the plugin. This information is later displayed in the LoginShield app during login. If you deactivate or uninstall the plugin, and want to delete this information, you can visit [https://loginshield.com](https://loginshield.com) to delete your LoginShield account where this information is stored.
+When you activate and set up the plugin, it sends the site name, icon, and URL to LoginShield. This information is later displayed in the LoginShield app during login. If you deactivate or uninstall the plugin, and want to delete this information, you can visit [https://loginshield.com](https://loginshield.com) to delete your LoginShield account where this information is stored.
 
 = User Name and Email =
 When a user activates LoginShield in their profile settings, their name and email address are sent to LoginShield to register the user.
