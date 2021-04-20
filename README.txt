@@ -2,12 +2,12 @@
 Contributors: jbuhacoff
 Donate link: https://loginshield.com/
 Tags: authentication, login, 2-factor, 2fa, phishing, anti-phishing, password, password-less, security
-Requires at least: 3.0.1
+Requires at least: 4.4
 Tested up to: 5.7
-Requires PHP: 5.6.20
+Requires PHP: 5.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: v1.0.9
+Stable tag: v1.0.10
 
 LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
 
@@ -15,7 +15,7 @@ LoginShield for WordPress is a more secure login for WordPress sites. It's easy 
 
 [LoginShield](https://loginshield.com) is an authentication system that features one-tap login, digital signatures, strong multi-factor authentication, and phishing protection.
 
-LoginShield for WordPres replaces the login page with the following secure sequence:
+LoginShield for WordPress replaces the login page with the following secure sequence:
 
 1. Prompt for username
 2. If user exists and has LoginShield enabled, use LoginShield; otherwise, prompt for password
@@ -34,6 +34,9 @@ This section describes how to install the plugin and get it working.
 After the plugin is set up, individual users can enable or disable LoginShield in their 'Profile' settings.
 
 == Frequently Asked Questions ==
+
+= What is a monthly active user? =
+A monthly active user (mau) is a WordPress user who has LoginShield enabled and logs in at least one time during the calendar month. For example, if you have 5000 registered users, and 500 of them enabled LoginShield, but only 50 of them log in at least once during the month, then you will be billed for 50 monthly active users for that month. With a base fee of $10.00 and a rate of $0.05/mau, the bill for that month would be $12.50.
 
 = What happens when the free trial expires? =
 
@@ -70,6 +73,12 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 9. Use camera button to snap QR code when needed
 
 == Changelog ==
+
+= 1.0.10 =
+* Fix: incorrect minimum WordPress version in README.txt, should be 4.4
+* Fix: incorrect minimum PHP version in README.txt, should be 5.2
+* Fix: endpoint URL defined in multiple places, should be defined once
+* Improve: move utility functions to new util.php
 
 = 1.0.9 =
 * Fix: missing banner and icon for WordPress plugin directory
@@ -111,8 +120,6 @@ First draft of plugin for private testing.
 The free trial is for two weeks (14 days). After the free trial, to continue using LoginShield for WordPress you need to have a LoginShield subscription.
 
 Subscription price: $10/month base fee + $0.05/month for each monthly active user. For current pricing, [visit our website](https://loginshield.com/pricing/wordpress/).
-
-A monthly active user is a WordPress user who has LoginShield enabled and logs in at least one time during the calendar month. For example, if you have 5000 registered users, and 1000 of them enabled LoginShield, but only 500 of them log in at least once during the month, then you will be billed for 500 monthly active users for that month.
 
 The monthly active user pricing makes it possible to provide you with a very predictable price. You pay the same rate, regardless of how many times a user logs in to the site that month.
 
