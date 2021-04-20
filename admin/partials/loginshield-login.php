@@ -15,41 +15,19 @@
 
 <?php
     // NOTE: see https://developer.wordpress.org/reference/functions/login_header/ for reference on some of the setup that happens here
+    global $wp_version;
     
-    $login_header_url = get_bloginfo('url');
+    $login_header_url = apply_filters( 'login_headerurl', get_bloginfo('url') );
 
-    /**
-     * Filters link URL of the header logo above login form.
-     *
-     * @since 2.1.0
-     *
-     * @param string $login_header_url Login header logo URL.
-     */
-    $login_header_url = apply_filters( 'login_headerurl', $login_header_url );
-
-    $login_header_title = '';
-
-    /**
-     * Filters the title attribute of the header logo above login form.
-     *
-     * @since 2.1.0
-     * @deprecated 5.2.0 Use {@see 'login_headertext'} instead.
-     *
-     * @param string $login_header_title Login header logo title attribute.
-     */
-    $login_header_title = apply_filters_deprecated(
-        'login_headertitle',
-        array( $login_header_title ),
-        '5.2.0',
-        'login_headertext',
-        __( 'Usage of the title attribute on the login logo is not recommended for accessibility reasons. Use the link text instead.' )
-    );
-
-    $login_header_text = empty( $login_header_title ) ? get_bloginfo('name') : $login_header_title;
+    if (version_compare($wp_version, '5.2', '>=')) {
+        $login_header_text = apply_filters( 'login_headertext', get_bloginfo('name') );
+    } else {
+        $login_header_text = apply_filters( 'login_headertitle', get_bloginfo('name') );
+    }
 
     $redirect_to = isset($_REQUEST['redirect_to']) && wp_validate_redirect($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : get_home_url();
     $mode = isset($_GET['mode']) ? sanitize_key($_GET['mode']) : '';
-    $loginshield = isset($_GET['loginshield']) && wp_validate_http_url($_GET['loginshield']) ? $_GET['loginshield'] : '';
+    $loginshield = isset($_GET['loginshield']) && wp_http_validate_url($_GET['loginshield']) ? $_GET['loginshield'] : '';
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->

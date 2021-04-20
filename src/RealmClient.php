@@ -1,5 +1,12 @@
 <?php
 
+// str_starts_with available since php 8
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        $length = strlen( $needle );
+        return substr( $haystack, 0, $length ) === $needle;
+    }
+}
 
 class RealmClient
 {
@@ -115,7 +122,7 @@ class RealmClient
             $apiResponseBody = wp_remote_retrieve_body($apiResponse);
             $response = json_decode($apiResponseBody);
 
-            if ($response && $response->isCreated && $response->forward && $this->startsWith($response->forward, $this->endpointURL)) {
+            if ($response && $response->isCreated && $response->forward && str_starts_with($response->forward, $this->endpointURL)) {
                 return $response;
             }
 
@@ -196,7 +203,7 @@ conflict error
             $apiResponseBody = wp_remote_retrieve_body($apiResponse);
             $response = json_decode($apiResponseBody);
 
-            if ($response && $response->forward && $this->startsWith($response->forward, $this->endpointURL)) {
+            if ($response && $response->forward && str_starts_with($response->forward, $this->endpointURL)) {
                 return $response;
             }
 
@@ -282,16 +289,4 @@ conflict error
         return $args;
     }
 
-    /**
-     * A utility to check if a string starts with a sub string or not
-     *
-     * @param string $haystack     Resource String
-     * @param string $needle       Target Sub String
-     *
-     * @return mixed
-     */
-    private function startsWith( $haystack, $needle ) {
-        $length = strlen( $needle );
-        return substr( $haystack, 0, $length ) === $needle;
-    }
 }

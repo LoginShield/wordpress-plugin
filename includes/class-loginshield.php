@@ -76,13 +76,9 @@ class LoginShield {
 	 * @since    1.0.0
 	 */
 	public function __construct() {
-		if ( defined( 'LOGINSHIELD_VERSION' ) ) {
-			$this->version = LOGINSHIELD_VERSION;
-		} else {
-			$this->version = '1.0.0';
-		}
-		$this->plugin_name = 'loginshield';
-        $this->plugin_display_name = 'LoginShield for WordPress';
+        $this->version = loginshield_version();
+		$this->plugin_name = loginshield_plugin_name();
+        $this->plugin_display_name = loginshield_plugin_display_name();
 
 		$this->load_dependencies();
 		$this->set_locale();
@@ -113,35 +109,35 @@ class LoginShield {
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-loader.php';
+		require_once LOGINSHIELD_PLUGIN_PATH . 'includes/class-loginshield-loader.php';
 
 		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-i18n.php';
+		require_once LOGINSHIELD_PLUGIN_PATH . 'includes/class-loginshield-i18n.php';
 
         /**
          * The class responsible for defining all Rest APIs
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-loginshield-restapi.php';
+        require_once LOGINSHIELD_PLUGIN_PATH . 'includes/class-loginshield-restapi.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-loginshield-admin.php';
+		require_once LOGINSHIELD_PLUGIN_PATH . 'admin/class-loginshield-admin.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
 		 * side of the site.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-loginshield-public.php';
+		require_once LOGINSHIELD_PLUGIN_PATH . 'public/class-loginshield-public.php';
 
         /**
          * The class responsible for 3rd party API integration
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/RealmClient.php';
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'src/Webauthz.php';
+        require_once LOGINSHIELD_PLUGIN_PATH . 'src/RealmClient.php';
+        require_once LOGINSHIELD_PLUGIN_PATH . 'src/Webauthz.php';
 
 		$this->loader = new LoginShield_Loader();
 
@@ -283,7 +279,7 @@ class LoginShield {
 
 	    ob_start();
 	    do_action('personalize_login_before_'.$template_name);
-	    require(plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/'.$template_name.'.php');
+	    require(LOGINSHIELD_PLUGIN_PATH . 'admin/partials/'.$template_name.'.php');
 	    do_action('personalize_login_after_'.$template_name);
 	    $html = ob_get_contents();
 	    ob_end_clean();

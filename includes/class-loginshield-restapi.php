@@ -146,7 +146,7 @@ class LoginShield_RestAPI
         $this->version = $version;
 
         $this->endpoint_url = get_home_url();
-        $this->loginshield_endpoint_url = 'https://loginshield.com';
+        $this->loginshield_endpoint_url = loginshield_endpoint_url();
         $this->loginshield_realm_id = get_option('loginshield_realm_id');
         $this->loginshield_authorization_token = get_option('loginshield_access_token');
         
@@ -308,7 +308,7 @@ class LoginShield_RestAPI
             }
 
             $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-            $isActivated = $this->get_boolean_user_meta($userId, 'loginshield_is_activated');
+            $isActivated = get_boolean_user_meta($userId, 'loginshield_is_activated');
             return new WP_REST_Response([
                 'isActivated'      => $isActivated,
             ], 200);
@@ -552,7 +552,7 @@ class LoginShield_RestAPI
      */
     private function fetchRealmInfoById($realmId, $accessToken)
     {
-        $url = 'https://loginshield.com/service/realm';
+        $url = $this->loginshield_endpoint_url . '/service/realm';
         $url = add_query_arg( 'id', $realmId, $url );
         
         $args = $this->prepare_json_get($accessToken);        
@@ -587,7 +587,7 @@ class LoginShield_RestAPI
      */
     private function fetchRealmInfoByURL($realmURL, $accessToken = '')
     {
-        $url = 'https://loginshield.com/service/realm';
+        $url = $this->loginshield_endpoint_url . '/service/realm';
         $url = add_query_arg( 'uri', $realmURL, $url );
         
         $args = $this->prepare_json_get($accessToken);               
@@ -757,8 +757,8 @@ class LoginShield_RestAPI
                 
                 $current_user = wp_get_current_user();
                 $user_id = $current_user->ID;
-                $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
-                $loginshieldUserId = $this->get_string_user_meta($user_id, 'loginshield_user_id');
+                $isActivated = get_boolean_user_meta($user_id, 'loginshield_is_activated');
+                $loginshieldUserId = get_string_user_meta($user_id, 'loginshield_user_id');
 
                 if ($isActivated && $loginshieldUserId) {
                     $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
@@ -796,12 +796,12 @@ class LoginShield_RestAPI
                 if ($verifyLoginResponse->realmId == $this->loginshield_realm_id) {
                     $user_id = $this->findUserIdByLoginShieldUserId($verifyLoginResponse->realmScopedUserId);
                     if ($user_id) {
-                        $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
+                        $isActivated = get_boolean_user_meta($user_id, 'loginshield_is_activated');
                         if (!$isActivated) {
-                            $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', true);
-                            $this->set_boolean_user_meta($user_id, 'loginshield_is_registered', true);
-                            $this->set_boolean_user_meta($user_id, 'loginshield_is_confirmed', true);
-                            $this->set_string_user_meta($user_id, 'loginshield_user_id', $verifyLoginResponse->realmScopedUserId);
+                            set_boolean_user_meta($user_id, 'loginshield_is_activated', true);
+                            set_boolean_user_meta($user_id, 'loginshield_is_registered', true);
+                            set_boolean_user_meta($user_id, 'loginshield_is_confirmed', true);
+                            set_string_user_meta($user_id, 'loginshield_user_id', $verifyLoginResponse->realmScopedUserId);
                         }
                         $this->autoLoginWithCookie($user_id);
                         return new WP_REST_Response([
@@ -830,8 +830,8 @@ class LoginShield_RestAPI
                 }
 
                 $userId = $user->get_ID() ? $user->get_ID() : $user->data->ID;
-                $isActivated = $this->get_boolean_user_meta($userId, 'loginshield_is_activated');
-                $loginshieldUserId = $this->get_string_user_meta($userId, 'loginshield_user_id');
+                $isActivated = get_boolean_user_meta($userId, 'loginshield_is_activated');
+                $loginshieldUserId = get_string_user_meta($userId, 'loginshield_user_id');
                 
                 $login_page_id = get_option( 'loginshield_login_page' );
                 $login_url = get_permalink( $login_page_id );
@@ -922,7 +922,7 @@ class LoginShield_RestAPI
             }
             
             // delete the user registration via LoginShield API
-            $loginshield_user_id = $this->get_string_user_meta($user_id, 'loginshield_user_id');
+            $loginshield_user_id = get_string_user_meta($user_id, 'loginshield_user_id');
             $isDeletedFromAuthenticationServer = false;
             if ($loginshield_user_id) {
                 $loginshield = new RealmClient($this->loginshield_endpoint_url, $this->loginshield_realm_id, $this->loginshield_authorization_token);
@@ -972,7 +972,7 @@ class LoginShield_RestAPI
             $user_name = $current_user->user_login;
             $user_email = $current_user->user_email;
 
-            $realmScopedUserId = $this->get_string_user_meta($user_id, 'loginshield_user_id');
+            $realmScopedUserId = get_string_user_meta($user_id, 'loginshield_user_id');
             if ($realmScopedUserId) {
                 return new WP_REST_Response([
                     'forward'     => $this->endpoint_url . '/account/loginshield/continue-registration'
@@ -997,10 +997,10 @@ class LoginShield_RestAPI
             }
 
             if ($response->isCreated) {
-                $this->set_boolean_user_meta($user_id, 'loginshield_is_registered', true);
-                $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', false);
-                $this->set_boolean_user_meta($user_id, 'loginshield_is_confirmed', false);
-                $this->set_string_user_meta($user_id, 'loginshield_user_id', $realmScopedUserId);
+                set_boolean_user_meta($user_id, 'loginshield_is_registered', true);
+                set_boolean_user_meta($user_id, 'loginshield_is_activated', false);
+                set_boolean_user_meta($user_id, 'loginshield_is_confirmed', false);
+                set_string_user_meta($user_id, 'loginshield_user_id', $realmScopedUserId);
 
                 if ($response->forward) {
                     return new WP_REST_Response([
@@ -1055,16 +1055,16 @@ class LoginShield_RestAPI
             $current_user = wp_get_current_user();
             $user_id = $current_user->ID;
             
-            $isRegistered = $this->get_boolean_user_meta($user_id, 'loginshield_is_registered');
-            $isConfirmed = $this->get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
+            $isRegistered = get_boolean_user_meta($user_id, 'loginshield_is_registered');
+            $isConfirmed = get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
             
             if ($isRegistered && $isConfirmed) {
-                $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', $isActive);
+                set_boolean_user_meta($user_id, 'loginshield_is_activated', $isActive);
                 return new WP_REST_Response([
                     'isActive'     => $isActive
                 ], 200);
             } else {
-                $this->set_boolean_user_meta($user_id, 'loginshield_is_activated', false);
+                set_boolean_user_meta($user_id, 'loginshield_is_activated', false);
                 return new WP_REST_Response([
                     'isActive'     => false,
                     'error'        => 'Must complete registration to activate'
@@ -1194,62 +1194,4 @@ class LoginShield_RestAPI
         return $randomString;
     }
 
-    /**
-     * Check if an option exists in WP_Options table
-     *
-     * @param string $name
-     * @param boolean $site_wide
-     *
-     * @return object
-     */
-    private function option_exists($name, $site_wide = false) {
-        global $wpdb;
-        return $wpdb->query("SELECT * FROM ". ($site_wide ? $wpdb->base_prefix : $wpdb->prefix). "options WHERE option_name ='$name' LIMIT 1");
-    }
-    
-    /**
-     * Retrieves the user meta key as a boolean; if it has a string value such as
-     * 'true' or 'false', it is converted to a boolean value for the result.
-     */
-    private function get_boolean_user_meta($user_id, $key) {
-        $value = get_user_meta($user_id, $key, true);
-        return isset($value) && is_string($value) && filter_var($value, FILTER_VALIDATE_BOOLEAN);
-    }
-    
-    /**
-     * Updates the user meta key with a string value of either 'true' or 'false'.
-     * If the input is a non-empty string with values OTHER THAN '0', 'false', 'off',
-     * it will be stored as 'true'.
-     */
-    private function set_boolean_user_meta($user_id, $key, $value) {
-        $sanitized = isset($value) ? $value : '';
-        if (is_string($sanitized)) {
-            $sanitized = filter_var($sanitized, FILTER_VALIDATE_BOOLEAN);
-        }
-        update_user_meta($user_id, $key, $sanitized ? 'true' : 'false');
-    }
-    
-    /**
-     * Retrieves the user meta key as a string
-     */
-    private function get_string_user_meta($user_id, $key) {
-        $value = get_user_meta($user_id, $key, true);
-        return isset($value) && is_string($value) ? $value : '';
-    }
-    
-    /**
-     * Updates the user meta key with a string value
-     */
-    private function set_string_user_meta($user_id, $key, $value) {
-        $sanitized = isset($value) ? $value : '';
-        if (!is_string($sanitized)) {
-            try {
-                $sanitized = strval($sanitized);
-            } catch (\Exception $exception) {
-                $sanitized = '';
-            }
-        }
-        update_user_meta($user_id, $key, $sanitized);
-    }
-    
 }

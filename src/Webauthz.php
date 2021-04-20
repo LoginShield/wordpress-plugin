@@ -1,5 +1,24 @@
 <?php
 
+// str_starts_with available since php 8
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        $length = strlen( $needle );
+        return substr( $haystack, 0, $length ) === $needle;
+    }
+}
+
+// str_ends_with available since php 8
+if (!function_exists('str_ends_with')) {
+    function str_ends_with($haystack, $needle) {
+        $length = strlen( $needle );
+        if ($length == 0) {
+            return true;
+        }
+        return substr( $haystack, -$length ) === $needle;
+    }
+}
+
 /**
  * Implementation of a Webauthz client for integration into applications to support
  * the Webauthz protocol for obtaining access to network resources controlled by the
@@ -183,7 +202,7 @@ class Webauthz
         $contentType = wp_remote_retrieve_header($response, 'content-type');
         $payload = (object) array();
         
-        if ($contentType === 'application/json' || $this->startsWith($contentType, 'application/json;')) {
+        if ($contentType === 'application/json' || str_starts_with($contentType, 'application/json;')) {
             $bodyJson = wp_remote_retrieve_body($response);
             $payload = json_decode($bodyJson);
         }
@@ -210,9 +229,9 @@ class Webauthz
         }
         
         $csv = '';
-        if ($this->startsWith(strtolower($wwwAuthenticate), 'webauthz ')) {
+        if (str_starts_with(strtolower($wwwAuthenticate), 'webauthz ')) {
             $csv = substr($wwwAuthenticate, strlen('webauthz '));
-        } elseif ($this->startsWith(strtolower($wwwAuthenticate), 'bearer ')) {
+        } elseif (str_starts_with(strtolower($wwwAuthenticate), 'bearer ')) {
             $csv = substr($wwwAuthenticate, strlen('bearer '));
         } else {
             return (object) array('isWebauthz' => false, 'WWW-Authenticate' => $wwwAuthenticate);
@@ -226,7 +245,7 @@ class Webauthz
             $kvpair = explode('=', $info);
             $key = $kvpair[0];
             $rawvalue = $kvpair[1];
-            if ($this->startsWith($rawvalue, '"') && $this->endsWith($rawvalue, '"')) {
+            if (str_starts_with($rawvalue, '"') && str_ends_with($rawvalue, '"')) {
                 $rawvalue = substr($rawvalue, 1, strlen($rawvalue) - 1);
             }
             $value = urldecode($rawvalue);
@@ -265,33 +284,5 @@ class Webauthz
         }
         return $randomString;
     }
-    
-    /**
-     * A utility to check if a string starts with a specified string
-     *
-     * @param string $haystack     Resource String
-     * @param string $needle       Target Sub String
-     *
-     * @return mixed
-     */
-    private function startsWith( $haystack, $needle ) {
-        $length = strlen( $needle );
-        return substr( $haystack, 0, $length ) === $needle;
-    }    
 
-    /**
-     * A utility to check if a string ends with a specified string
-     *
-     * @param string $haystack     Resource String
-     * @param string $needle       Target Sub String
-     *
-     * @return mixed
-     */
-    private function endsWith( $haystack, $needle ) {
-        $length = strlen( $needle );
-        if ($length == 0) {
-            return true;
-        }
-        return substr( $haystack, -$length ) === $needle;
-    }
 }

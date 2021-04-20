@@ -109,8 +109,8 @@ class LoginShield_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'css/snackbar.css', array(), $this->version, 'all' );
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/loginshield-admin.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name . 'snackbar', LOGINSHIELD_PLUGIN_URL . 'admin/css/snackbar.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name, LOGINSHIELD_PLUGIN_URL . 'admin/css/loginshield-admin.css', array(), $this->version, 'all' );
 
 	}
 
@@ -131,9 +131,9 @@ class LoginShield_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'js/snackbar.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . 'realmClientBrowser', plugin_dir_url( __FILE__ ) . 'js/realm-client-browser.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . 'loginShieldAdmin', plugin_dir_url( __FILE__ ) . 'js/loginshield-admin.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'snackbar', LOGINSHIELD_PLUGIN_URL . 'admin/js/snackbar.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'realmClientBrowser', LOGINSHIELD_PLUGIN_URL . 'admin/js/realm-client-browser.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'loginShieldAdmin', LOGINSHIELD_PLUGIN_URL . 'admin/js/loginshield-admin.js', array( 'jquery' ), $this->version, false );
 
         wp_localize_script( $this->plugin_name . 'loginShieldAdmin', 'loginshieldSettingAjax', array(
             'ajax_url'  => admin_url( 'admin-ajax.php' ),
@@ -155,11 +155,14 @@ class LoginShield_Admin {
     }
 
     public function loginshield_admin_setting(){
+        
+        require_once LOGINSHIELD_PLUGIN_PATH . 'includes/util.php';
+
         /**
          * The file contain plugin setting html form.
          *
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/loginshield-plugin-setting.php';
+        require_once LOGINSHIELD_PLUGIN_PATH . 'admin/partials/loginshield-plugin-setting.php';
 
     }
     
@@ -193,13 +196,13 @@ class LoginShield_Admin {
     public function loginshield_show_user_profile($user) {
         $current_user = wp_get_current_user();
         $user_id = $current_user->ID;
-        $isRegistered = $this->get_boolean_user_meta($user_id, 'loginshield_is_registered');
-        $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
-        $isConfirmed = $this->get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
-        $loginshield_user_id = $this->get_string_user_meta($user_id, 'loginshield_user_id');
+        $isRegistered = get_boolean_user_meta($user_id, 'loginshield_is_registered');
+        $isActivated = get_boolean_user_meta($user_id, 'loginshield_is_activated');
+        $isConfirmed = get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
+        $loginshield_user_id = get_string_user_meta($user_id, 'loginshield_user_id');
 
         $mode = isset($_GET['mode']) ? sanitize_key($_GET['mode']) : '';
-        $loginshield = isset($_GET['loginshield']) && wp_validate_http_url($_GET['loginshield']) ? $_GET['loginshield'] : '';
+        $loginshield = isset($_GET['loginshield']) && wp_http_validate_url($_GET['loginshield']) ? $_GET['loginshield'] : '';
 
         ?>
         <h2>LoginShield Management</h2>
@@ -263,10 +266,10 @@ class LoginShield_Admin {
      */
     public function loginshield_edit_user_profile($user) {
         $user_id = $user->ID;
-        $isRegistered = $this->get_boolean_user_meta($user_id, 'loginshield_is_registered');
-        $isActivated = $this->get_boolean_user_meta($user_id, 'loginshield_is_activated');
-        $isConfirmed = $this->get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
-        $loginshield_user_id = $this->get_string_user_meta($user_id, 'loginshield_user_id');
+        $isRegistered = get_boolean_user_meta($user_id, 'loginshield_is_registered');
+        $isActivated = get_boolean_user_meta($user_id, 'loginshield_is_activated');
+        $isConfirmed = get_boolean_user_meta($user_id, 'loginshield_is_confirmed');
+        $loginshield_user_id = get_string_user_meta($user_id, 'loginshield_user_id');
         ?>
         <h2>LoginShield Management</h2>
 		<table id="LoginShieldForm" class="form-table">
@@ -371,7 +374,7 @@ class LoginShield_Admin {
             return $template;
         }
 
-        $file = plugin_dir_path( __FILE__ ). get_post_meta( $post->ID, '_wp_page_template', true );
+        $file = LOGINSHIELD_PLUGIN_PATH . 'admin/' . get_post_meta( $post->ID, '_wp_page_template', true );
 
         // Just to be safe, we check if the file exist first
         if ( file_exists( $file ) ) {
@@ -396,7 +399,7 @@ class LoginShield_Admin {
          * The file contain plugin login page html
          *
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/loginshield-login.php';
+        require_once LOGINSHIELD_PLUGIN_PATH . 'admin/partials/loginshield-login.php';
 
     }
 
@@ -424,23 +427,6 @@ class LoginShield_Admin {
             wp_safe_redirect( $url );
             exit;
         }
-    }
-    
-    /**
-     * Retrieves the user meta key as a boolean; if it has a string value such as
-     * 'true' or 'false', it is converted to a boolean value for the result.
-     */
-    private function get_boolean_user_meta($user_id, $key) {
-        $value = get_user_meta($user_id, $key, true);
-        return isset($value) && is_string($value) && filter_var($value, FILTER_VALIDATE_BOOLEAN);
-    }
-    
-    /**
-     * Retrieves the user meta key as a string
-     */
-    private function get_string_user_meta($user_id, $key) {
-        $value = get_user_meta($user_id, $key, true);
-        return isset($value) && is_string($value) ? $value : '';
     }
     
 }

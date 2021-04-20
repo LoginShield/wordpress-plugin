@@ -82,8 +82,8 @@ class LoginShield_Public {
 		 * class.
 		 */
 
-        wp_enqueue_style( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'css/snackbar.css', array(), $this->version, 'all' );
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/loginshield-public.css', array(), $this->version, 'all' );
+        wp_enqueue_style( $this->plugin_name . 'snackbar', LOGINSHIELD_PLUGIN_URL . 'public/css/snackbar.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name, LOGINSHIELD_PLUGIN_URL . 'public/css/loginshield-public.css', array(), $this->version, 'all' );
 
 	}
 
@@ -104,9 +104,9 @@ class LoginShield_Public {
 		 * class.
 		 */
 
-        wp_enqueue_script( $this->plugin_name . 'snackbar', plugin_dir_url( __FILE__ ) . 'js/snackbar.js', array( 'jquery' ), $this->version, false );
-        wp_enqueue_script( $this->plugin_name . 'realmClientBrowser', plugin_dir_url( __FILE__ ) . 'js/realm-client-browser.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . 'loginShieldPublic', plugin_dir_url( __FILE__ ) . 'js/loginshield-public.js', array( 'jquery' ), $this->version, false );
+        wp_enqueue_script( $this->plugin_name . 'snackbar', LOGINSHIELD_PLUGIN_URL . 'public/js/snackbar.js', array( 'jquery' ), $this->version, false );
+        wp_enqueue_script( $this->plugin_name . 'realmClientBrowser', LOGINSHIELD_PLUGIN_URL . 'public/js/realm-client-browser.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . 'loginShieldPublic', LOGINSHIELD_PLUGIN_URL . 'public/js/loginshield-public.js', array( 'jquery' ), $this->version, false );
 
         wp_localize_script( $this->plugin_name . 'loginShieldPublic', 'loginShieldPublicAjax', array(
             'ajax_url'  => admin_url( 'admin-ajax.php' ),
