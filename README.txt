@@ -7,7 +7,7 @@ Tested up to: 5.7
 Requires PHP: 5.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: v1.0.10
+Stable tag: v1.0.11
 
 LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
 
@@ -74,6 +74,9 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 
 == Changelog ==
 
+= 1.0.11 =
+* Fix: replace embedded pricing information with link to pricing page on loginshield.com
+
 = 1.0.10 =
 * Fix: incorrect minimum WordPress version in README.txt, should be 4.4
 * Fix: incorrect minimum PHP version in README.txt, should be 5.2
@@ -117,11 +120,7 @@ First draft of plugin for private testing.
 
 == Pricing ==
 
-The free trial is for two weeks (14 days). After the free trial, to continue using LoginShield for WordPress you need to have a LoginShield subscription.
-
-Subscription price: $10/month base fee + $0.05/month for each monthly active user. For current pricing, [visit our website](https://loginshield.com/pricing/wordpress/).
-
-The monthly active user pricing makes it possible to provide you with a very predictable price. You pay the same rate, regardless of how many times a user logs in to the site that month.
+For current pricing and free trial details, [visit our website](https://loginshield.com/pricing/wordpress/).
 
 == Managing your LoginShield subscription ==
 
