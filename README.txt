@@ -7,7 +7,7 @@ Tested up to: 5.7
 Requires PHP: 5.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: v1.0.11
+Stable tag: v1.0.12
 
 LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
 
@@ -36,7 +36,7 @@ After the plugin is set up, individual users can enable or disable LoginShield i
 == Frequently Asked Questions ==
 
 = What is a monthly active user? =
-A monthly active user (mau) is a WordPress user who has LoginShield enabled and logs in at least one time during the calendar month. For example, if you have 5000 registered users, and 500 of them enabled LoginShield, but only 50 of them log in at least once during the month, then you will be billed for 50 monthly active users for that month. With a base fee of $10.00 and a rate of $0.05/mau, the bill for that month would be $12.50.
+A monthly active user (mau) is a WordPress user who has LoginShield enabled and logs in at least one time during the calendar month. For example, if you have 5000 registered users, and 500 of them enabled LoginShield, but only 50 of them log in at least once during the month, then you will be billed for 50 monthly active users for that month.
 
 = What happens when the free trial expires? =
 
@@ -73,6 +73,9 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 9. Use camera button to snap QR code when needed
 
 == Changelog ==
+
+= 1.0.12 =
+* Fix: removed example pricing from FAQ
 
 = 1.0.11 =
 * Fix: replace embedded pricing information with link to pricing page on loginshield.com
