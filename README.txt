@@ -1,19 +1,19 @@
 === LoginShield for WordPress ===
 Contributors: jbuhacoff
 Donate link: https://loginshield.com/
-Tags: authentication, login, 2-factor, 2fa, phishing, anti-phishing, password, password-less, security
+Tags: authentication, login, 2-factor, 2fa, phishing, anti-phishing, password, passwordless, password-less, security, mitm
 Requires at least: 4.4
 Tested up to: 5.7
 Requires PHP: 5.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: v1.0.12
+Stable tag: v1.0.13
 
 LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
 
 == Description ==
 
-[LoginShield](https://loginshield.com) is an authentication system that features one-tap login, digital signatures, strong multi-factor authentication, and phishing protection.
+[LoginShield](https://loginshield.com) is an authentication system that features one-tap login, digital signatures, strong multi-factor authentication, and phishing protection. This is a passwordless login solution. Login with one tap instead of a password!
 
 LoginShield for WordPress replaces the login page with the following secure sequence:
 
@@ -21,6 +21,72 @@ LoginShield for WordPress replaces the login page with the following secure sequ
 2. If user exists and has LoginShield enabled, use LoginShield; otherwise, prompt for password
 
 The LoginShield app is available for Android and iOS. [Get the app](https://loginshield.com/software/).
+
+== Benefits ==
+
+* Eliminate password and phishing attacks on user accounts
+* Quick and secure way to log in with one-tap, passwordless login
+* Don't need to remember a password
+* Don't need to rotate passwords for safety
+
+== Features ==
+
+= Self-service activation =
+After you install and set up the LoginShield plugin, users can easily
+activate LoginShield for themselves in their profile settings page.
+
+= One-tap login =
+You and your users can log in to your WordPress site with just one tap.
+
+For more information, read about [one-tap login](https://loginshield.com/article/one-tap-login/).
+
+= Digital signatures =
+Some of the most common ways that accounts are hacked are weak passwords and
+stolen passwords. This is why so many sites require users to come up with
+passwords that have special characters, and to change their passwords periodically
+(in case a current password was reused somewhere and cracked). But this is
+annoying to users and doesn't guarantee they will actually pick a secure password.
+
+LoginShield uses digital signatures for authentication instead of passwords.
+This makes LoginShield a passwordless authentication system.
+
+Digital signatures are far stronger protection for an account than passwords,
+and they don't require the user to come up with anything or remember anything.
+LoginShield automatically generates and uses a separate credential for each
+website, so you can use the same LoginShield app to login to multiple sites.
+
+LoginShield uses strong, modern cryptographic algorithms and parameters to
+ensure your accounts get the best protection available.
+
+= Strong multi-factor authentication =
+The LoginShield app itself can be protected by a password (which never leaves
+the mobile device) or a fingerprint. This is far better protection than the
+standard two-factor authentication that many sites use.
+
+For more information, read about [authentication factors](https://loginshield.com/article/authentication-factors/).
+
+= Phishing protection =
+LoginShield is the ONLY authentication solution to offer phishing protection.
+
+Many data breaches start with a phishing email, tricking the user to log in to
+the attacker's website that is impersonating the real website. Any website that
+uses passwords to log in is vulnerable to this.
+
+Websites that use standard
+two-factor authentication codes are also vulnerable -- whether they send the code
+via SMS or use an OTP app to display it, the fact that you enter that code into
+the website after the password prompt means a phishing attacker will also get the
+code.
+
+Websites that use an authenticator app with push notifications are ALSO
+vulnerable to this, because they don't confirm that you're at the correct website
+when you tap the "login" button in the app.
+
+Only LoginShield is able to detect that the user is not at a trusted website
+and route the user to the correct website, completely circumventing a credential-theft
+phishing attack.
+
+For more information, read about [phishing protection](https://loginshield.com/article/phishing-protection/).
 
 == Installation ==
 
@@ -73,6 +139,9 @@ Please visit [the LoginShield website](https://loginshield.com) for contact info
 9. Use camera button to snap QR code when needed
 
 == Changelog ==
+
+= 1.0.13 =
+* Doc: edited plugin description
 
 = 1.0.12 =
 * Fix: removed example pricing from FAQ
