@@ -73,7 +73,6 @@ class LoginShield_Admin {
         $this->templates = array();
 
         // Initialize settings
-		add_action( 'admin_init', array( $this,'loginshield_settings_register' ) );
         add_action( 'admin_init', array( $this,'loginshield_activation_redirect' ) );
         
         // Add settings link in plugins page
@@ -402,7 +401,6 @@ class LoginShield_Admin {
         require_once LOGINSHIELD_PLUGIN_PATH . 'admin/partials/loginshield-login.php';
 
     }
-
 
     /**
      * Redirects the user after plugin activation. The redirect happens only under the

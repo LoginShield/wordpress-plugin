@@ -31,6 +31,26 @@ class LoginShield_Activator {
 	 */
 	public static function activate() {
         /**
+         * Create options if they don't already exist. Existing options will not be updated.
+         */
+        add_option( 'loginshield_realm_id' );
+        add_option( 'loginshield_access_token' );
+        add_option( 'loginshield_access_token_not_after' );
+        add_option( 'loginshield_refresh_token' );
+        add_option( 'loginshield_refresh_token_not_after' );
+        add_option( 'loginshield_webauthz_discovery_uri' );
+        add_option( 'loginshield_webauthz_register_uri' );
+        add_option( 'loginshield_webauthz_request_uri' );
+        add_option( 'loginshield_webauthz_exchange_uri' );
+        add_option( 'loginshield_client_id' );
+        add_option( 'loginshield_client_token' );
+        add_option( 'loginshield_realm' );
+        add_option( 'loginshield_scope' );
+        add_option( 'loginshield_path' );
+        add_option( 'loginshield_client_state' );
+        add_option( 'loginshield_login_page' );
+        
+        /**
          * Create LoginShield Login Page.
          *
          * @since    1.0.3

@@ -484,20 +484,26 @@ loginShield.SettingsForm = (function($) {
     },
 
     checkRealmStatus: async function() {
-      const response = await this.handleCheckRealmStatus();
+      try {
+          
+          const response = await this.handleCheckRealmStatus();
 
-      const { status, error, message, realmId } = response;
+          const { status, error, message, realmId } = response;
 
-      if (status === 'success') {
-        console.info(message);
-        this.showNormalForm();
-        this.$realmIdText.text(realmId);
-        return;
-      }
+          if (status === 'success') {
+            console.info(message);
+            this.showNormalForm();
+            this.$realmIdText.text(realmId);
+            return;
+          }
 
-      if (error) {
-        console.info(message);
-        this.showAccessRequestForm();
+          if (error) {
+            console.info(message);
+            this.showAccessRequestForm();
+          }
+      } catch (err) {
+          console.error('checkRealmStatus failed', err);
+          this.showAccessRequestForm();
       }
     },
 
