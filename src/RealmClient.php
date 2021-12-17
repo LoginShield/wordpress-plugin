@@ -73,7 +73,7 @@ class RealmClient
             $apiResponseBody = wp_remote_retrieve_body($apiResponse);
             $response = json_decode($apiResponseBody);
 
-            if ($response && $response->isCreated) {
+            if ($response && isset($response->isCreated)) {
                 return $response;
             }
 
@@ -122,7 +122,7 @@ class RealmClient
             $apiResponseBody = wp_remote_retrieve_body($apiResponse);
             $response = json_decode($apiResponseBody);
 
-            if ($response && $response->isCreated && $response->forward && str_starts_with($response->forward, $this->endpointURL)) {
+            if ($response && isset($response->isCreated) && isset($response->forward) && str_starts_with($response->forward, $this->endpointURL)) {
                 return $response;
             }
 
@@ -161,7 +161,7 @@ conflict error
             $apiResponseBody = wp_remote_retrieve_body($apiResponse);
             $response = json_decode($apiResponseBody);
 
-            if ($response && $response->isDeleted) {
+            if ($response && isset($response->isDeleted)) {
                 return $response;
             }
 
@@ -203,7 +203,7 @@ conflict error
             $apiResponseBody = wp_remote_retrieve_body($apiResponse);
             $response = json_decode($apiResponseBody);
 
-            if ($response && $response->forward && str_starts_with($response->forward, $this->endpointURL)) {
+            if ($response && isset($response->forward) && str_starts_with($response->forward, $this->endpointURL)) {
                 return $response;
             }
 
