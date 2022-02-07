@@ -3,7 +3,7 @@ Contributors: jbuhacoff
 Donate link: https://loginshield.com/
 Tags: authentication, login, 2-factor, 2fa, phishing, anti-phishing, password, passwordless, password-less, security, mitm
 Requires at least: 4.4
-Tested up to: 5.8.1
+Tested up to: 5.9
 Requires PHP: 5.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
