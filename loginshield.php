@@ -20,7 +20,7 @@
  * Plugin Name:       LoginShield
  * Plugin URI:        https://loginshield.com
  * Description:       LoginShield for WordPress is a more secure login for WordPress sites. It's easy to use and protects users against password and phishing attacks.
- * Version:           1.0.15
+ * Version:           1.0.16
  * Author:            Cryptium
  * Author URI:        https://cryptium.com
  * License:           GPL-2.0

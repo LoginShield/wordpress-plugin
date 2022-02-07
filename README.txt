@@ -7,7 +7,7 @@ Tested up to: 5.9
 Requires PHP: 5.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: v1.0.15
+Stable tag: v1.0.16
 
 LoginShield for WordPress is the secure and convenient way to login to your WordPress site. It's easy to use and protects users against password and phishing attacks.
 
